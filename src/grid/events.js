@@ -22,6 +22,9 @@ export default {
         this.pixelRatio = window.devicePixelRatio
     },
     methods: {
+        /**
+         * 移除全局事件方法
+         */
         removeEvent() {
             window.removeEventListener('mousedown', this.handleMousedown, false)
             window.removeEventListener('mousemove', throttle(16, this.handleMousemove), true)
@@ -31,208 +34,19 @@ export default {
             window.removeEventListener('keydown', this.handleKeydown, false)
             window.removeEventListener('keyup', this.handleKeyup, false)
         },
+        /**
+         * 注册事件
+         */
         initEvent() {
             window.addEventListener('mousedown', this.handleMousedown, false)
             window.addEventListener('mousemove', throttle(16, this.handleMousemove), true)
             window.addEventListener('mouseup', this.handleMouseup, false)
-            // this.$refs.canvas.addEventListener('mouseleave', this.handleMouseup, false)
-            this.$refs.canvas.addEventListener('dblclick', this.handleDoubleClick, false)
-            this.$refs.canvas.addEventListener('click', this.handleClick, false)
             window.addEventListener('resize', this.handleResize, false)
             window.addEventListener(this.isFirefox ? 'DOMMouseScroll' : 'mousewheel', this.handleWheel)
             window.addEventListener('keydown', this.handleKeydown, false)
             window.addEventListener('keyup', this.handleKeyup, false)
-        },
-        handleResize() {
-            this.isFocus = false
-            this.focusCell = null
-
-            this.selectArea = null
-            this.isSelect = false
-            this.save()
-            this.hideInput()
-            this.initSize()
-        },
-        handleColumnSet() {
-            this.showColumnSet = false
-            this.initSize()
-        },
-        handleClick(evt) {
-            if (!this.isSelect) {
-                const x = evt.offsetX
-                const y = evt.offsetY
-                if (x > this.maxPoint.x && y > this.maxPoint.y && x < this.width && y < this.height) {
-                    this.fullScreen()
-                }
-                if (this.showCheckbox) {
-                    if (x > this.serialWidth && x < this.originPoint.x) {
-                        const checkbox = this.getCheckboxAt(x, y)
-                        if (checkbox) {
-                            if (this.selected.indexOf(checkbox.rowIndex) !== -1) {
-                                this.selected.splice(this.selected.findIndex((item) => { if (item === checkbox.rowIndex) { return true } return false }), 1)
-                            } else {
-                                this.selected.push(checkbox.rowIndex)
-                            }
-                            this.rePainted()
-                        } else if (x > this.serialWidth + 5 && x < this.serialWidth + 5 + 20 && y > 5 && y < 25) {
-                            if (this.selected.length === this.allRows.length) {
-                                this.selected = []
-                            } else {
-                                this.selected = []
-                                for (const row of this.allRows) {
-                                    this.selected.push(row.rowIndex)
-                                }
-                            }
-                            this.rePainted()
-                        }
-                        return
-                    }
-                }
-
-                if (this.columnSet) {
-                    if (!this.showColumnSet) {
-                        if (x > 55 && x < 64 && y > 7 && y < 23) {
-                            this.showColumnSet = true
-                            return
-                        }
-                    } else {
-                        this.handleColumnSet()
-                    }
-                }
-
-                const button = this.getButtonAt(x, y)
-                if (button) {
-                    this.rowFocus = button
-                    button.click(this.data[button.rowIndex], button.rowIndex)
-                    this.rePainted()
-                }
-            }
-        },
-        handleDoubleClick() {
-            if (this.focusCell) {
-                const { x, y, width, height, content } = this.focusCell
-                this.$refs.input.innerHTML = content
-                this.keepLastIndex(this.$refs.input)
-                this.showInput(x, y, width, height)
-            }
-        },
-        handleWheel(e) {
-            if (e.target.tagName === 'CANVAS') {
-                if (!this.isEditing) {
-                    const { deltaX, deltaY } = e
-                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                        const lastScrollX = this.offset.x
-                        let maxWidth = 0
-                        if (this.fillWidth > 0) {
-                            maxWidth = this.maxPoint.x
-                        } else {
-                            maxWidth = this.maxPoint.x + this.fixedWidth
-                        }
-                        if (this.offset.x - deltaX > 0) {
-                            this.offset.x = 0
-                        } else if ((this.bodyWidth - maxWidth) + this.offset.x < deltaX) {
-                            this.offset.x = maxWidth - this.bodyWidth
-                            if (maxWidth - this.bodyWidth < 0) {
-                                this.offset.x = maxWidth - this.bodyWidth
-                            } else {
-                                e.preventDefault()
-                                e.returnValue = false
-                            }
-                        } else {
-                            e.preventDefault()
-                            e.returnValue = false
-                            this.offset.x -= deltaX
-                        }
-                        if (lastScrollX !== this.offset.x) {
-                            requestAnimationFrame(this.rePainted)
-                            this.$emit('scroll')
-                        }
-                    } else {
-                        const lastScrollY = this.offset.y
-                        if (lastScrollY - deltaY > 0) {
-                            this.offset.y = 0
-                        } else if ((this.bodyHeight - this.maxPoint.y) + lastScrollY < deltaY) {
-                            if (this.maxPoint.y - this.bodyHeight < 0) {
-                                this.offset.y = this.maxPoint.y - this.bodyHeight
-                            } else {
-                                e.preventDefault()
-                                e.returnValue = false
-                            }
-                        } else {
-                            e.preventDefault()
-                            e.returnValue = false
-                            this.offset.y -= deltaY
-                        }
-                        if (lastScrollY !== this.offset.y) {
-                            requestAnimationFrame(this.rePainted)
-                            this.$emit('scroll')
-                        }
-                    }
-                }
-            }
-        },
-        handleMousemove(evt) {
-            if (this.isDown && this.isFocus && evt.target.tagName === 'CANVAS') {
-                const eX = evt.offsetX
-                const eY = evt.offsetY
-                const { x, y, width, height, rowIndex, cellIndex } = this.focusCell
-                if (eX >= x && eX <= x + width && eY >= y && eY <= y + height) {
-                    if (this.selectArea) {
-                        this.selectArea = null
-                        this.isSelect = false
-                        this.rePainted()
-                    }
-                } else {
-                    const cell = this.getCellAt(eX, eY)
-                    if (cell) {
-                        if (cell.x >= x && cell.y >= y) {
-                            this.selectArea = { x, y, width: (cell.x - x) + cell.width, height: (cell.y - y) + cell.height, cellIndex, rowIndex, offset: { ...this.offset } }
-                        } else if (cell.x >= x && cell.y <= y) {
-                            this.selectArea = { x, y: cell.y, width: (cell.x - x) + cell.width, height: (y - cell.y) + height, rowIndex: cell.rowIndex, cellIndex, offset: { ...this.offset } }
-                        } else if (cell.x <= x && cell.y <= y) {
-                            this.selectArea = { x: cell.x, y: cell.y, width: (x - cell.x) + width, height: (y - cell.y) + height, rowIndex: cell.rowIndex, cellIndex: cell.cellIndex, offset: { ...this.offset } }
-                        } else if (cell.x <= x && cell.y >= y) {
-                            this.selectArea = { x: cell.x, y, width: (x - cell.x) + width, height: (cell.y - y) + cell.height, rowIndex, cellIndex: cell.cellIndex, offset: { ...this.offset } }
-                        }
-                        this.selectArea.rowCount = Math.abs(cell.rowIndex - rowIndex) + 1
-                        this.isSelect = true
-                        this.rePainted()
-                    }
-                }
-            }
-            if (this.verticalBar.move) {
-                const height = this.maxPoint.y - this.verticalBar.size
-                const moveHeight = this.verticalBar.y + (evt.screenY - this.verticalBar.cursorY)
-                if (moveHeight > 0 && moveHeight < height) {
-                    this.verticalBar.y += evt.screenY - this.verticalBar.cursorY
-                } else if (moveHeight <= 0) {
-                    this.verticalBar.y = 0
-                } else {
-                    this.verticalBar.y = height
-                }
-                this.verticalBar.cursorY = evt.screenY
-                this.offset.y = -this.verticalBar.y / this.verticalBar.k
-                requestAnimationFrame(this.rePainted)
-            }
-            if (this.horizontalBar.move) {
-                let width = 0
-                if (this.fillWidth > 0) {
-                    width = this.maxPoint.x - this.horizontalBar.size
-                } else {
-                    width = (this.maxPoint.x + this.fixedWidth) - this.horizontalBar.size
-                }
-                const moveWidth = this.horizontalBar.x + (evt.screenX - this.horizontalBar.cursorX)
-                if (moveWidth > 0 && moveWidth < width) {
-                    this.horizontalBar.x += evt.screenX - this.horizontalBar.cursorX
-                } else if (moveWidth <= 0) {
-                    this.horizontalBar.x = 0
-                } else {
-                    this.horizontalBar.x = width
-                }
-                this.horizontalBar.cursorX = evt.screenX
-                this.offset.x = -this.horizontalBar.x / this.horizontalBar.k
-                requestAnimationFrame(this.rePainted)
-            }
+            this.$refs.canvas.addEventListener('dblclick', this.handleDoubleClick, false)
+            this.$refs.canvas.addEventListener('click', this.handleClick, false)
         },
         handleMousedown(evt) {
             this.save()
@@ -321,14 +135,200 @@ export default {
                 }
             }
         },
+        handleMousemove(evt) {
+            if (this.isDown && this.isFocus && evt.target.tagName === 'CANVAS') {
+                const eX = evt.offsetX
+                const eY = evt.offsetY
+                const { x, y, width, height, rowIndex, cellIndex } = this.focusCell
+                if (eX >= x && eX <= x + width && eY >= y && eY <= y + height) {
+                    if (this.selectArea) {
+                        this.selectArea = null
+                        this.isSelect = false
+                        this.rePainted()
+                    }
+                } else {
+                    const cell = this.getCellAt(eX, eY)
+                    if (cell) {
+                        if (cell.x >= x && cell.y >= y) {
+                            this.selectArea = { x, y, width: (cell.x - x) + cell.width, height: (cell.y - y) + cell.height, cellIndex, rowIndex, offset: { ...this.offset } }
+                        } else if (cell.x >= x && cell.y <= y) {
+                            this.selectArea = { x, y: cell.y, width: (cell.x - x) + cell.width, height: (y - cell.y) + height, rowIndex: cell.rowIndex, cellIndex, offset: { ...this.offset } }
+                        } else if (cell.x <= x && cell.y <= y) {
+                            this.selectArea = { x: cell.x, y: cell.y, width: (x - cell.x) + width, height: (y - cell.y) + height, rowIndex: cell.rowIndex, cellIndex: cell.cellIndex, offset: { ...this.offset } }
+                        } else if (cell.x <= x && cell.y >= y) {
+                            this.selectArea = { x: cell.x, y, width: (x - cell.x) + width, height: (cell.y - y) + cell.height, rowIndex, cellIndex: cell.cellIndex, offset: { ...this.offset } }
+                        }
+                        this.selectArea.rowCount = Math.abs(cell.rowIndex - rowIndex) + 1
+                        this.isSelect = true
+                        this.rePainted()
+                    }
+                }
+            }
+            if (this.verticalBar.move) {
+                const height = this.maxPoint.y - this.verticalBar.size
+                const moveHeight = this.verticalBar.y + (evt.screenY - this.verticalBar.cursorY)
+                if (moveHeight > 0 && moveHeight < height) {
+                    this.verticalBar.y += evt.screenY - this.verticalBar.cursorY
+                } else if (moveHeight <= 0) {
+                    this.verticalBar.y = 0
+                } else {
+                    this.verticalBar.y = height
+                }
+                this.verticalBar.cursorY = evt.screenY
+                this.offset.y = -this.verticalBar.y / this.verticalBar.k
+                requestAnimationFrame(this.rePainted)
+            }
+            if (this.horizontalBar.move) {
+                let width = 0
+                if (this.fillWidth > 0) {
+                    width = this.maxPoint.x - this.horizontalBar.size
+                } else {
+                    width = (this.maxPoint.x + this.fixedWidth) - this.horizontalBar.size
+                }
+                const moveWidth = this.horizontalBar.x + (evt.screenX - this.horizontalBar.cursorX)
+                if (moveWidth > 0 && moveWidth < width) {
+                    this.horizontalBar.x += evt.screenX - this.horizontalBar.cursorX
+                } else if (moveWidth <= 0) {
+                    this.horizontalBar.x = 0
+                } else {
+                    this.horizontalBar.x = width
+                }
+                this.horizontalBar.cursorX = evt.screenX
+                this.offset.x = -this.horizontalBar.x / this.horizontalBar.k
+                requestAnimationFrame(this.rePainted)
+            }
+        },
         handleMouseup() {
             this.isDown = false
             this.horizontalBar.move = false
             this.verticalBar.move = false
         },
-        handleKeyup(e) {
-            if (e.keyCode === 16) {
-                this.shiftDown = false
+        handleResize() {
+            this.isFocus = false
+            this.focusCell = null
+
+            this.selectArea = null
+            this.isSelect = false
+            this.save()
+            this.hideInput()
+            this.initSize()
+        },
+        handleWheel(e) {
+            if (e.target.tagName === 'CANVAS') {
+                if (!this.isEditing) {
+                    const { deltaX, deltaY } = e
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                        const lastScrollX = this.offset.x
+                        let maxWidth = 0
+                        if (this.fillWidth > 0) {
+                            maxWidth = this.maxPoint.x
+                        } else {
+                            maxWidth = this.maxPoint.x + this.fixedWidth
+                        }
+                        if (this.offset.x - deltaX > 0) {
+                            this.offset.x = 0
+                        } else if ((this.bodyWidth - maxWidth) + this.offset.x < deltaX) {
+                            this.offset.x = maxWidth - this.bodyWidth
+                            if (maxWidth - this.bodyWidth < 0) {
+                                this.offset.x = maxWidth - this.bodyWidth
+                            } else {
+                                e.preventDefault()
+                                e.returnValue = false
+                            }
+                        } else {
+                            e.preventDefault()
+                            e.returnValue = false
+                            this.offset.x -= deltaX
+                        }
+                        if (lastScrollX !== this.offset.x) {
+                            requestAnimationFrame(this.rePainted)
+                            this.$emit('scroll')
+                        }
+                    } else {
+                        const lastScrollY = this.offset.y
+                        if (lastScrollY - deltaY > 0) {
+                            this.offset.y = 0
+                        } else if ((this.bodyHeight - this.maxPoint.y) + lastScrollY < deltaY) {
+                            if (this.maxPoint.y - this.bodyHeight < 0) {
+                                this.offset.y = this.maxPoint.y - this.bodyHeight
+                            } else {
+                                e.preventDefault()
+                                e.returnValue = false
+                            }
+                        } else {
+                            e.preventDefault()
+                            e.returnValue = false
+                            this.offset.y -= deltaY
+                        }
+                        if (lastScrollY !== this.offset.y) {
+                            requestAnimationFrame(this.rePainted)
+                            this.$emit('scroll')
+                        }
+                    }
+                }
+            }
+        },
+        handleColumnSet() {
+            this.showColumnSet = false
+            this.initSize()
+        },
+        handleClick(evt) {
+            if (!this.isSelect) {
+                const x = evt.offsetX
+                const y = evt.offsetY
+                if (x > this.maxPoint.x && y > this.maxPoint.y && x < this.width && y < this.height) {
+                    this.fullScreen()
+                }
+                if (this.showCheckbox) {
+                    if (x > this.serialWidth && x < this.originPoint.x) {
+                        const checkbox = this.getCheckboxAt(x, y)
+                        if (checkbox) {
+                            if (this.selected.indexOf(checkbox.rowIndex) !== -1) {
+                                this.selected.splice(this.selected.findIndex((item) => { if (item === checkbox.rowIndex) { return true } return false }), 1)
+                            } else {
+                                this.selected.push(checkbox.rowIndex)
+                            }
+                            this.rePainted()
+                        } else if (x > this.serialWidth + 5 && x < this.serialWidth + 5 + 20 && y > 5 + this.toolbarHeight && y < 25 + this.toolbarHeight) {
+                            if (this.selected.length === this.allRows.length) {
+                                this.selected = []
+                            } else {
+                                this.selected = []
+                                for (const row of this.allRows) {
+                                    this.selected.push(row.rowIndex)
+                                }
+                            }
+                            this.rePainted()
+                        }
+                        return
+                    }
+                }
+
+                if (this.columnSet) {
+                    if (!this.showColumnSet) {
+                        if (x > 55 && x < 64 && y > 7 + this.toolbarHeight && y < 23 + this.toolbarHeight) {
+                            this.showColumnSet = true
+                            return
+                        }
+                    } else {
+                        this.handleColumnSet()
+                    }
+                }
+
+                const button = this.getButtonAt(x, y)
+                if (button) {
+                    this.rowFocus = button
+                    button.click(this.data[button.rowIndex], button.rowIndex)
+                    this.rePainted()
+                }
+            }
+        },
+        handleDoubleClick() {
+            if (this.focusCell) {
+                const { x, y, width, height, content } = this.focusCell
+                this.$refs.input.innerHTML = content
+                this.keepLastIndex(this.$refs.input)
+                this.showInput(x, y, width, height)
             }
         },
         handleKeydown(e) {
@@ -421,8 +421,10 @@ export default {
                 }
             }
         },
-        handleInputKeyup() {
-
+        handleKeyup(e) {
+            if (e.keyCode === 16) {
+                this.shiftDown = false
+            }
         },
         moveFocus(type) {
             if (!this.focusCell) {

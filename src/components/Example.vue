@@ -1,11 +1,11 @@
 <template>
     <div>
-        <grid :grid-data="data" :columns="columns" :showCheckbox="showCheckbox" :columnSet="columnSet" :left-height="200" @focus="focus" @updateValue="update"></grid>
+        <grid :grid-data="data" :columns="columns" :showCheckbox="showCheckbox" :columnSet="columnSet" :left-height="20" @focus="focus" @updateValue="update"></grid>
     </div>
 </template>
 
 <script>
-import Grid from '../grid'
+import Grid from '../../dist/vue-canvas-grid'
 
 export default {
     components: {
@@ -35,7 +35,7 @@ export default {
                         return [{
                             title: '操作',
                             click() {
-                                console.log(rowData, index)
+                                console.log(rowData, index)  //eslint-disable-line
                             },
                         }]
                     },
@@ -44,7 +44,7 @@ export default {
         }
     },
     created() {
-        for (let i = 0; i < 10000; i += 1) {
+        for (let i = 0; i < 100; i += 1) {
             this.data.push({
                 brandName: `博世${i}`,
                 goodsName: `电钻${i}`,
@@ -61,10 +61,10 @@ export default {
     },
     methods: {
         update(value) {
-            console.log(value)
+            console.log(value) //eslint-disable-line
         },
         focus(value) {
-            console.log(value)
+            console.log(value) //eslint-disable-line
         },
     },
 }

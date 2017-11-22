@@ -1,6 +1,20 @@
 <template>
     <div ref="grid" class="excel-table" :style="`height:${height+2}px;`" @paste="doPaste">
-        <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent @keyup="handleInputKeyup"></div>
+        <div v-if="showToolbar" class="toolbar">
+            <div class="toolbar__focus" :style="'width:'+(serialWidth+checkboxWidth+1)+'px;'">
+                {{focusCell?focusCell.cellPosition:''}}
+            </div>
+            <div class="toobar__fx">
+                <label>
+                    批量处理：
+                </label>
+                <div class="toobar__fx-content">
+                    <input type="text" v-model="fxContent">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent></div>
         <div class="input-content" ref="inputSelect" contenteditable="true" @keydown.prevent></div>
         <div class="horizontal-container" :style="{width:`${width-scrollerWidth+2}px`}" @click="scroll($event,0)">
             <div class="scroll-bar-horizontal" ref="horizontal" @mousedown="dragMove($event,0)" :style="{width:horizontalBar.size+'px',left:horizontalBar.x+'px'}">
@@ -21,7 +35,7 @@
         </transition>
 
         <transition name="slide-fade">
-            <div v-if="showColumnSet" ref="columnSet" class="column-set">
+            <div v-if="showColumnSet" ref="columnSet" class="column-set" :style="'top:'+(31+toolbarHeight)+'px;'">
                 <div class="column-set__title">请选择需要显示的列</div>
                 <div class="column-set__content" :style="'max-height:'+(height-105)+'px;'">
                     <ul>
@@ -45,12 +59,13 @@ import painted from './painted'
 import events from './events'
 import calculate from './calculate'
 import scroller from './scroller'
-import checkbox from './checkbox'
+import checkbox from './checkbox.vue' //eslint-disable-line
 import history from './history'
+import utils from './utils'
 
 // type: default,noextent
 export default {
-    mixins: [calculate, painted, events, scroller, history],
+    mixins: [utils, calculate, painted, events, scroller, history],
     components: { checkbox },
     props: {
         columns: Array,
@@ -79,6 +94,10 @@ export default {
             default: false,
         },
         templateData: Object,
+        showToolbar: {
+            type: Boolean,
+            default: true,
+        },
     },
     data() {
         return {
@@ -104,6 +123,7 @@ export default {
             tipMessage: '',
             isPaste: false,
             initRows: 300,
+            fxContent: '',
         }
     },
     watch: {
@@ -112,6 +132,9 @@ export default {
             this.initCanvas()
             this.painted(this.initDisplayItems())
             this.initEvent()
+        },
+        focusCell(value) {
+            this.fxContent = value.content
         },
         selectArea(value) {
             if (value) {
@@ -143,7 +166,7 @@ export default {
         })
     },
     mounted() {
-        this.$nextTick(function() { //eslint-disable-line
+        this.$nextTick(function () { //eslint-disable-line
             if (this.data.length > 0) {
                 this.initCanvas()
                 // this.painted(this.initDisplayItems())
@@ -178,7 +201,6 @@ export default {
                 this.showInput(x, y, width, height)
             } else if (!this.isEditing) {
                 this.isPaste = false
-
                 const objE = document.createElement('div')
                 objE.innerHTML = e.target.innerHTML
                 const dom = objE.childNodes
@@ -440,199 +462,217 @@ export default {
             this.rePainted()
             return returnData
         },
-        showInput(x, y, width, height) {
-            this.isEditing = true
-            this.inputStyles = {
-                position: 'absolute',
-                top: `${y - 1}px`,
-                left: `${x - 1}px`,
-                minWidth: `${width + 2}px`,
-                maxWidth: `${this.maxPoint.x - x > 300 ? 300 : this.maxPoint.x - x}px`,
-                minHeight: `${height + 2}px`,
-            }
-        },
-        hideInput() {
-            this.isEditing = false
-            this.inputStyles = {
-                top: '-10000px',
-                left: '-10000px',
-            }
-        },
-        showTipMessage(message) {
-            this.tipMessage = message
-            this.showTip = true
-            setTimeout(() => {
-                this.showTip = false
-            }, 2000)
-        },
+
     },
 }
 </script>
 
 <style lang="scss" scoped>
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 .excel-table {
-    border: 1px solid #d4d4d4;
-    position: relative;
-    min-width: 714px;
-    .horizontal-container {
-        position: absolute;
-        height: 18px;
-        left: 0;
-        bottom: 0;
-        background: #f1f1f1;
-        user-select: none;
-        .scroll-bar-horizontal {
-            position: absolute;
-            bottom: 1px;
-            height: 16px;
-            padding: 0 2px;
-            >div {
-                width: 100%;
-                height: 16px;
-            }
-        }
+  border: 1px solid #d4d4d4;
+  position: relative;
+  min-width: 714px;
+  .toolbar {
+    position: absolute;
+    background-color: #f9f9f9;
+    height: 29px;
+    width: 100%;
+    .toolbar__focus {
+      height: 30px;
+      border-right: 1px solid #d4d4d4;
+      line-height: 30px;
+      text-align: center;
+      font-size: 14px;
+      display: inline-block;
     }
-    .vertical-container {
-        user-select: none;
-        position: absolute;
-        width: 18px;
-        top: 0;
-        right: 0;
-        background: #f1f1f1;
-        .scroll-bar-vertical {
-            position: absolute;
-            right: 1px;
-            width: 16px;
-            padding: 2px 0;
-            >div {
-                width: 16px;
-                height: 100%;
-            }
+    .toobar__fx {
+      display: inline-block;
+      vertical-align: top;
+      width: 600px;
+      label {
+        width: 70px;
+        display: inline-block;
+        height: 30px;
+        line-height: 30px;
+        font-size: 12px;
+        text-align: right;
+      }
+      .toobar__fx-content {
+        display: inline-block;
+        vertical-align: top;
+        input {
+          width: 520px;
+          outline: none;
+          border-top: none;
+          border-bottom: none;
+          border-left: 1px solid #d4d4d4;
+          border-right: 1px solid #d4d4d4;
+          height: 29px;
+          line-height: 29px;
+          padding: 5px 15px;
+          font-size: 12px;
         }
+      }
     }
+  }
+  .horizontal-container {
+    position: absolute;
+    height: 18px;
+    left: 0;
+    bottom: 0;
+    background: #f1f1f1;
+    user-select: none;
+    .scroll-bar-horizontal {
+      position: absolute;
+      bottom: 1px;
+      height: 16px;
+      padding: 0 2px;
+      > div {
+        width: 100%;
+        height: 16px;
+      }
+    }
+  }
+  .vertical-container {
+    user-select: none;
+    position: absolute;
+    width: 18px;
+    top: 0;
+    right: 0;
+    background: #f1f1f1;
+    .scroll-bar-vertical {
+      position: absolute;
+      right: 1px;
+      width: 16px;
+      padding: 2px 0;
+      > div {
+        width: 16px;
+        height: 100%;
+      }
+    }
+  }
 
-    .input-content {
-        padding: 5px;
-        top: -10000px;
-        left: -10000px;
+  .input-content {
+    padding: 5px;
+    top: -10000px;
+    left: -10000px;
+    outline: none;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
+    border: 2px solid #4285f4;
+    color: #666;
+    border-radius: 0px;
+    font-size: 12px;
+    position: fixed;
+    background-color: #fff;
+    z-index: 10;
+  }
+  .focus-area {
+    display: none;
+    border: 2px solid #4285f4;
+    top: -10000px;
+    left: -10000px;
+    position: absolute;
+    z-index: 5;
+  }
+  .select-area {
+    z-index: 5;
+    display: none;
+    border: 1px solid #03a2fe;
+    top: -10000px;
+    left: -10000px;
+    background-color: rgba(160, 195, 255, 0.2);
+    position: absolute;
+    transition: 0.1s all;
+  }
+  canvas {
+    user-select: none;
+    background-color: #fff;
+  }
+  .column-set {
+    position: absolute;
+    width: 150px;
+    background-color: #fff;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
+    left: 71px;
+    padding: 0 8px;
+    font-size: 12px;
+    color: #495060;
+    .column-set__title {
+      height: 30px;
+      line-height: 30px;
+      border-bottom: 1px solid #ddd;
+    }
+    .column-set__content {
+      overflow: auto;
+      padding: 5px;
+      color: #495060;
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        li {
+          font-size: 12px;
+          height: 30px;
+          line-height: 30px;
+        }
+      }
+    }
+    .column-set__footer {
+      height: 40px;
+      line-height: 40px;
+      border-top: 1px solid #ddd;
+      text-align: right;
+      button {
+        height: 25px;
+        width: 56px;
+        line-height: 24px;
+        background-color: #fff;
+        border: 1px solid #ddd;
         outline: none;
-        box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
-        border: 2px solid #4285f4;
-        color: #666;
-        border-radius: 0px;
-        font-size: 12px;
-        position: fixed;
-        background-color: #fff;
-        z-index: 10;
-    }
-    .focus-area {
-        display: none;
-        border: 2px solid #4285f4;
-        top: -10000px;
-        left: -10000px;
-        position: absolute;
-        z-index: 5;
-    }
-    .select-area {
-        z-index: 5;
-        display: none;
-        border: 1px solid #03a2fe;
-        top: -10000px;
-        left: -10000px;
-        background-color: rgba(160, 195, 255, 0.2);
-        position: absolute;
-        transition: 0.1s all;
-    }
-    canvas {
-        user-select: none;
-        background-color: #fff;
-    }
-    .column-set {
-        position: absolute;
-        width: 150px;
-        background-color: #fff;
-        box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
-        top: 31px;
-        left: 71px;
-        padding: 0 8px;
-        font-size: 12px;
-        color: #495060;
-        .column-set__title {
-            height: 30px;
-            line-height: 30px;
-            border-bottom: 1px solid #ddd;
+        cursor: pointer;
+        color: #333;
+        &:hover {
+          background-color: #f9f9f9;
         }
-        .column-set__content {
-            overflow: auto;
-            padding: 5px;
-            color: #495060;
-            ul {
-                margin: 0;
-                padding: 0;
-                list-style: none;
-                li {
-                    font-size: 12px;
-                    height: 30px;
-                    line-height: 30px;
-                }
-            }
+        &:active {
+          background-color: #f5f5f5;
         }
-        .column-set__footer {
-            height: 40px;
-            line-height: 40px;
-            border-top: 1px solid #ddd;
-            text-align: right;
-            button {
-                height: 25px;
-                width: 56px;
-                line-height: 24px;
-                background-color: #fff;
-                border: 1px solid #ddd;
-                outline: none;
-                cursor: pointer;
-                color: #333;
-                &:hover {
-                    background-color: #f9f9f9;
-                }
-                &:active {
-                    background-color: #f5f5f5;
-                }
-            }
-        }
+      }
     }
-    .tip {
-        position: absolute;
-        width: 300px;
-        top: 10px;
-        right: 30px;
-        background-color: #fff;
-        box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
-        padding: 10px 10px 10px 50px;
-        word-wrap: break-word;
-        .tip-icon {
-            position: absolute;
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            background-size: 100%;
-            left: 15px;
-        }
+  }
+  .tip {
+    position: absolute;
+    width: 300px;
+    top: 10px;
+    right: 30px;
+    background-color: #fff;
+    box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
+    padding: 10px 10px 10px 50px;
+    word-wrap: break-word;
+    .tip-icon {
+      position: absolute;
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-size: 100%;
+      left: 15px;
     }
-    .slide-fade-enter-active {
-        transition: all .2s ease;
-    }
-    .slide-fade-leave-active {
-        transition: all .1s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-    }
-    .slide-fade-enter,
-    .slide-fade-leave-to {
-        transform: translateX(10px);
-        opacity: 0;
-    }
+  }
+  .slide-fade-enter-active {
+    transition: all 0.2s ease;
+  }
+  .slide-fade-leave-active {
+    transition: all 0.1s cubic-bezier(1, 0.5, 0.8, 1);
+  }
+  .slide-fade-enter,
+  .slide-fade-leave-to {
+    transform: translateX(10px);
+    opacity: 0;
+  }
 }
 </style>
 

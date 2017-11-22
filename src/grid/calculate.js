@@ -9,6 +9,10 @@ export default {
         if (this.showCheckbox) {
             originPointX += checkboxWidth
         }
+        let toolbarHeight = 0
+        if (this.showToolbar) {
+            toolbarHeight = 60
+        }
         return {
             width: 0,
             height,
@@ -20,6 +24,7 @@ export default {
             serialWidth,
             checkboxWidth: 30,
             fillWidth: 0,
+            toolbarHeight,
 
             allCells: [],
             displayCells: [],
@@ -72,105 +77,11 @@ export default {
         }
     },
     methods: {
-        fullScreen() {
-            // TODO fullscrean
-
-            // this.$refs.canvas.style.position = 'fixed'
-            // this.$refs.canvas.style.top = 0
-            // this.$refs.canvas.style.left = 0
-            // this.$refs.canvas.style.right = 0
-            // this.$refs.canvas.style.bottom = 0
-            // this.$refs.canvas.style.zIndex = 1000
-
-            // this.width = window.innerWidth
-            // this.height = window.innerHeight
-
-            // if (this.showCheckbox) {
-            //     this.selected = [...this.initSelected]
-            //     this.originPoint.x = this.serialWidth + this.checkboxWidth
-            //     this.bodyWidth += this.checkboxWidth
-            // } else {
-            //     this.originPoint.x = this.serialWidth
-            //     this.bodyWidth -= this.checkboxWidth
-            // }
-            // this.bodyWidth = this.originPoint.x
-            // let columnCount = 0
-            // for (const column of this.allColumns) {
-            //     if (column.checked) {
-            //         this.bodyWidth += column.width ? column.width : 100
-            //         columnCount += 1
-            //     }
-            // }
-            // this.fillWidth = 0
-            // if (this.bodyWidth < this.width - this.scrollerWidth) {
-            //     this.fillWidth = (this.width - this.bodyWidth - this.scrollerWidth) / columnCount
-            //     this.bodyWidth = this.width - this.scrollerWidth
-            // }
-
-            // this.setBodyHeight(this.allRows, this.originPoint)
-            // this.setFixedWidth(this.allColumns, this.fillWidth)
-            // this.setMaxpoint(this.width, this.height, this.fixedWidth, this.scrollerWidth, this.fillWidth)
-            // this.resetScrollBar(this.maxPoint, this.bodyWidth, this.bodyHeight, this.fixedWidth)
-            // requestAnimationFrame(this.rePainted)
-        },
-        initSize() {
-            if (this.$refs.grid) {
-                this.width = this.$refs.grid.offsetWidth - 2
-                this.height = this.leftHeight ? window.innerHeight - this.leftHeight : 500
-
-                if (this.showCheckbox) {
-                    if (this.initSelected) {
-                        this.selected = [...this.initSelected]
-                    }
-                    this.originPoint.x = this.serialWidth + this.checkboxWidth
-                    this.bodyWidth += this.checkboxWidth
-                } else {
-                    this.originPoint.x = this.serialWidth
-                    this.bodyWidth -= this.checkboxWidth
-                }
-                this.bodyWidth = this.originPoint.x
-                let columnCount = 0
-                for (const column of this.allColumns) {
-                    if (column.checked) {
-                        this.bodyWidth += column.width ? column.width : 100
-                        columnCount += 1
-                    }
-                }
-                this.fillWidth = 0
-                if (this.bodyWidth < this.width - this.scrollerWidth) {
-                    this.fillWidth = (this.width - this.bodyWidth - this.scrollerWidth) / columnCount
-                    this.bodyWidth = this.width - this.scrollerWidth
-                }
-                this.setBodyHeight(this.allRows, this.originPoint)
-                this.setFixedWidth(this.allColumns, this.fillWidth)
-                this.setMaxpoint(this.width, this.height, this.fixedWidth, this.scrollerWidth, this.fillWidth)
-                this.resetScrollBar(this.maxPoint, this.bodyWidth, this.bodyHeight, this.fixedWidth)
-                requestAnimationFrame(this.rePainted)
-            }
-        },
-        setFixedWidth(allColumns, fillWidth) {
-            this.fixedWidth = 0
-            for (const column of allColumns) {
-                if (column.checked && column.fixed) {
-                    this.fixedWidth += column.width ? column.width : 100
-                    this.fixedWidth += fillWidth
-                }
-            }
-        },
-        setBodyHeight(allRows, { y }) {
-            this.bodyHeight = y
-            for (const row of allRows) {
-                this.bodyHeight += row.height
-            }
-        },
-        setMaxpoint(width, height, fixedWidth, scrollerWidth, fillWidth) {
-            if (fillWidth > 0) {
-                this.maxPoint.x = width - scrollerWidth
-            } else {
-                this.maxPoint.x = width - scrollerWidth - fixedWidth
-            }
-            this.maxPoint.y = height - scrollerWidth
-        },
+        /**
+         * 获取所有数据单元格，首次渲染调用一次（较耗时）
+         * @param {*} value
+         * @param {*} columns
+         */
         getAllCells(value, columns) {
             this.allCells = []
             this.allRows = []
@@ -245,6 +156,7 @@ export default {
                             renderButton: column.renderButton,
                             rowData: item,
                             type: column.type,
+                            cellPosition: this.words[cellIndex] + (rowIndex + 1),
                         })
                     } else {
                         cellTemp.push({
@@ -261,6 +173,7 @@ export default {
                             renderButton: column.renderButton,
                             rowData: item,
                             type: column.type,
+                            cellPosition: this.words[cellIndex] + (rowIndex + 1),
                         })
                     }
                     cellIndex += 1
@@ -293,6 +206,65 @@ export default {
                 }
                 allFixedCells.push(temp)
             }
+        },
+        fullScreen() { },
+        initSize() {
+            if (this.$refs.grid) {
+                this.width = this.$refs.grid.offsetWidth - 2
+                this.height = this.leftHeight ? window.innerHeight - this.leftHeight : 500
+
+                if (this.showCheckbox) {
+                    if (this.initSelected) {
+                        this.selected = [...this.initSelected]
+                    }
+                    this.originPoint.x = this.serialWidth + this.checkboxWidth
+                    this.bodyWidth += this.checkboxWidth
+                } else {
+                    this.originPoint.x = this.serialWidth
+                    this.bodyWidth -= this.checkboxWidth
+                }
+                this.bodyWidth = this.originPoint.x
+                let columnCount = 0
+                for (const column of this.allColumns) {
+                    if (column.checked) {
+                        this.bodyWidth += column.width ? column.width : 100
+                        columnCount += 1
+                    }
+                }
+                this.fillWidth = 0
+                if (this.bodyWidth < this.width - this.scrollerWidth) {
+                    this.fillWidth = (this.width - this.bodyWidth - this.scrollerWidth) / columnCount
+                    this.bodyWidth = this.width - this.scrollerWidth
+                }
+                this.setBodyHeight(this.allRows, this.originPoint)
+                this.setFixedWidth(this.allColumns, this.fillWidth)
+                this.setMaxpoint(this.width, this.height, this.fixedWidth, this.scrollerWidth, this.fillWidth)
+                this.resetScrollBar(this.maxPoint, this.bodyWidth, this.bodyHeight, this.fixedWidth)
+                requestAnimationFrame(this.rePainted)
+            }
+        },
+        setFixedWidth(allColumns, fillWidth) {
+            this.fixedWidth = 0
+            for (const column of allColumns) {
+                if (column.checked && column.fixed) {
+                    this.fixedWidth += column.width ? column.width : 100
+                    this.fixedWidth += fillWidth
+                }
+            }
+        },
+        setBodyHeight(allRows, { y }) {
+            this.bodyHeight = y
+            for (const row of allRows) {
+                this.bodyHeight += row.height
+            }
+        },
+        setMaxpoint(width, height, fixedWidth, scrollerWidth, fillWidth) {
+            if (fillWidth > 0) {
+                this.maxPoint.x = width - scrollerWidth
+            } else {
+                this.maxPoint.x = width - scrollerWidth - fixedWidth
+            }
+            this.maxPoint.y = height - scrollerWidth
         },
         setAllCells(startIndex) {
             const { rowHeight, ctx, getTextLine, allRows, allCells, columns } = this
@@ -360,9 +332,6 @@ export default {
             this.setBodyHeight(this.allRows, this.originPoint)
             this.resetScrollBar(this.maxPoint, this.bodyWidth, this.bodyHeight, this.fixedWidth)
         },
-        initRowHeight() {
-
-        },
         setCellItem(rowIndex, cellIndex, text) {
             const { ctx, allRows, allCells, getTextLine, rowHeight } = this
             const row = allRows[rowIndex]
@@ -424,27 +393,6 @@ export default {
                 index += 1
             }
         },
-        getDisplayCells(displayRows, displayColumns) {
-            const temp = []
-            const { allCells, fillWidth, setCellRenderText } = this
-            for (const row of displayRows) {
-                const cellTemp = []
-                for (const column of displayColumns) {
-                    let cell = allCells[row.rowIndex][column.cellIndex]
-                    if (cell.renderText) {
-                        cell = setCellRenderText(cell)
-                    }
-                    if (cell.renderButton) {
-                        cell.buttons = column.renderButton(this.data[cell.rowIndex], cell.rowIndex)
-                    }
-                    const cellClone = Object.assign({}, cell, { x: column.x, y: row.y, width: cell.width + fillWidth, height: row.height }) //eslint-disable-line
-                    cellTemp.push(cellClone)
-                }
-                temp.push(cellTemp)
-            }
-            setTimeout(() => { this.displayCells = [...temp] }, 0)
-            return temp
-        },
         setCellRenderText(cell) {
             const text = cell.renderText(cell.rowData)
             const row = this.allRows[cell.rowIndex]
@@ -471,41 +419,6 @@ export default {
             }
             return cell
         },
-        getDisplayFixedCells(displayRows) {
-            const temp = []
-            const { allFixedCells, fillWidth } = this
-            for (const fixedCell of allFixedCells) {
-                const fixedCellTemp = []
-                for (const row of displayRows) {
-                    const fixed = fixedCell[row.rowIndex]
-                    if (fixed.renderButton) {
-                        fixed.buttons = fixed.renderButton(this.data[fixed.rowIndex], fixed.rowIndex)
-                    }
-                    const fixedCellClone = Object.assign({}, fixed, { y: row.y, width: fixed.width + fillWidth, height: row.height })
-                    fixedCellTemp.push(fixedCellClone)
-                }
-                temp.push(fixedCellTemp)
-            }
-            setTimeout(() => { this.displayallFixedCells = [...temp] }, 0)
-            return temp
-        },
-        getDisplayRows() {
-            const { offset: { y }, originPoint, maxPoint, allRows } = this
-            const temp = []
-            let startY = originPoint.y + y
-            for (const row of allRows) {
-                if (startY + row.height > originPoint.y
-                    && startY < maxPoint.y) {
-                    const rowClone = Object.assign({}, row, { y: startY })
-                    temp.push(rowClone)
-                } else if (startY >= maxPoint.y) {
-                    break
-                }
-                startY += row.height
-            }
-            setTimeout(() => { this.displayRows = [...temp] }, 0)
-            return temp
-        },
         getDisplayColumns() {
             const { offset: { x }, originPoint, maxPoint, allColumns, fillWidth } = this
             const temp = []
@@ -524,111 +437,9 @@ export default {
             setTimeout(() => { this.displayColumns = [...temp] }, 0)
             return temp
         },
-        getTextLine(ctx, text, width) {
-            if (!text && text !== 0) {
-                return null
-            }
-            const chr = `${text}`.split('')
-            let temp = ''
-            const row = []
-            for (let a = 0; a < chr.length; a += 1) {
-                if (ctx.measureText(temp).width >= width - 20) {
-                    row.push(temp)
-                    temp = ''
-                }
-                temp += chr[a]
-            }
-            row.push(temp)
-            return row
-        },
-        getCellAt(x, y) {
-            for (const rows of this.displayCells) {
-                for (const cell of rows) {
-                    if (x >= cell.x && y >= cell.y && x <= cell.x + cell.width && y <= cell.y + cell.height) {
-                        return Object.assign({}, cell, { offset: { ...this.offset } })
-                    }
-                }
-            }
-            return null
-        },
-        getCheckboxAt(x, y) {
-            for (const check of this.checkboxs) {
-                if (x >= check.x && y >= check.y && x <= check.x + check.width && y <= check.y + check.height) {
-                    return Object.assign({}, check)
-                }
-            }
-            return null
-        },
-        getButtonAt(x, y) {
-            for (const button of this.renderButtons) {
-                if (x >= button.x && y >= button.y && x <= button.x + button.width && y <= button.y + button.height) {
-                    return Object.assign({}, button)
-                }
-            }
-            return null
-        },
-        getCellsBySelect(area) {
-            const cells = []
-            for (let i = area.rowIndex; i < area.rowIndex + area.rowCount; i += 1) {
-                const row = this.allCells[i]
-                const temp = []
-                let startX = 0
-                let maxWidth = Infinity
-                for (let j = 0; j < row.length; j += 1) {
-                    if (area.cellIndex === j) {
-                        maxWidth = startX + area.width
-                    }
-                    if (startX < maxWidth && j >= area.cellIndex) {
-                        temp.push(row[j])
-                    } else if (startX > maxWidth) {
-                        break
-                    }
-                    startX += row[j].width + this.fillWidth
-                }
-                cells.push(temp)
-            }
-            return cells
-        },
-        getCellByRowAndKey(rowIndex, key) {
-            const cells = this.allCells[rowIndex]
-            for (const cell of cells) {
-                if (cell.key === key) {
-                    return cell
-                }
-            }
-            return null
-        },
-        focusCellByOriginCell(cell) {
-            for (const row of this.displayCells) {
-                for (const item of row) {
-                    if (item.rowIndex === cell.rowIndex && item.key === cell.key) {
-                        const focusCell = Object.assign({}, item, { offset: { ...this.offset } })
-                        this.focusCell = focusCell
-                        this.rowFocus = {
-                            cellX: focusCell.x,
-                            cellY: focusCell.y,
-                            rowIndex: this.focusCell.rowIndex,
-                            offset: { ...this.offset },
-                        }
-                        this.paintFocusCell(focusCell)
-                        return focusCell
-                    }
-                }
-            }
-            return null
-        },
-        freshFocusCell(rowIndex, cellIndex, displayRows, displayColumns) {
-            const firstRowIndex = displayRows[0].rowIndex
-            const lastRowIndex = displayRows[displayRows.length - 1].rowIndex
-            if (rowIndex >= firstRowIndex && rowIndex <= lastRowIndex) {
-                this.focusCell.height = displayRows[rowIndex - firstRowIndex].height
-            }
-            for (const item of displayColumns) {
-                if (item.cellIndex === cellIndex) {
-                    this.focusCell.width = item.width
-                }
-            }
-        },
+        /**
+       * 初始化显示行列
+       */
         initDisplayItems() {
             const displayColumns = this.getDisplayColumns()
             const displayRows = this.getDisplayRows()
@@ -667,6 +478,93 @@ export default {
                 }
             }
             return { displayColumns, displayRows, displayCells, displayFixedCells }
+        },
+        getDisplayRows() {
+            const { offset: { y }, originPoint, maxPoint, allRows, toolbarHeight } = this
+            const temp = []
+            let startY = originPoint.y + y + toolbarHeight
+            for (const row of allRows) {
+                if (startY + row.height > originPoint.y + toolbarHeight
+                    && startY < maxPoint.y) {
+                    const rowClone = Object.assign({}, row, { y: startY })
+                    temp.push(rowClone)
+                } else if (startY >= maxPoint.y) {
+                    break
+                }
+                startY += row.height
+            }
+            setTimeout(() => { this.displayRows = [...temp] }, 0)
+            return temp
+        },
+        getDisplayCells(displayRows, displayColumns) {
+            const temp = []
+            const { allCells, fillWidth, setCellRenderText } = this
+            for (const row of displayRows) {
+                const cellTemp = []
+                for (const column of displayColumns) {
+                    let cell = allCells[row.rowIndex][column.cellIndex]
+                    if (cell.renderText) {
+                        cell = setCellRenderText(cell)
+                    }
+                    if (cell.renderButton) {
+                        cell.buttons = column.renderButton(this.data[cell.rowIndex], cell.rowIndex)
+                    }
+                    const cellClone = Object.assign({}, cell, { x: column.x, y: row.y, width: cell.width + fillWidth, height: row.height }) //eslint-disable-line
+                    cellTemp.push(cellClone)
+                }
+                temp.push(cellTemp)
+            }
+            setTimeout(() => { this.displayCells = [...temp] }, 0)
+            return temp
+        },
+        getDisplayFixedCells(displayRows) {
+            const temp = []
+            const { allFixedCells, fillWidth } = this
+            for (const fixedCell of allFixedCells) {
+                const fixedCellTemp = []
+                for (const row of displayRows) {
+                    const fixed = fixedCell[row.rowIndex]
+                    if (fixed.renderButton) {
+                        fixed.buttons = fixed.renderButton(this.data[fixed.rowIndex], fixed.rowIndex)
+                    }
+                    const fixedCellClone = Object.assign({}, fixed, { y: row.y, width: fixed.width + fillWidth, height: row.height })
+                    fixedCellTemp.push(fixedCellClone)
+                }
+                temp.push(fixedCellTemp)
+            }
+            setTimeout(() => { this.displayallFixedCells = [...temp] }, 0)
+            return temp
+        },
+        freshFocusCell(rowIndex, cellIndex, displayRows, displayColumns) {
+            const firstRowIndex = displayRows[0].rowIndex
+            const lastRowIndex = displayRows[displayRows.length - 1].rowIndex
+            if (rowIndex >= firstRowIndex && rowIndex <= lastRowIndex) {
+                this.focusCell.height = displayRows[rowIndex - firstRowIndex].height
+            }
+            for (const item of displayColumns) {
+                if (item.cellIndex === cellIndex) {
+                    this.focusCell.width = item.width
+                }
+            }
+        },
+        focusCellByOriginCell(cell) {
+            for (const row of this.displayCells) {
+                for (const item of row) {
+                    if (item.rowIndex === cell.rowIndex && item.key === cell.key) {
+                        const focusCell = Object.assign({}, item, { offset: { ...this.offset } })
+                        this.focusCell = focusCell
+                        this.rowFocus = {
+                            cellX: focusCell.x,
+                            cellY: focusCell.y,
+                            rowIndex: this.focusCell.rowIndex,
+                            offset: { ...this.offset },
+                        }
+                        this.paintFocusCell(focusCell)
+                        return focusCell
+                    }
+                }
+            }
+            return null
         },
     },
 }
