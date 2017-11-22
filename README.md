@@ -4,9 +4,35 @@
 
 ![vue-grid-canvas](https://github.com/Harveyzhao/vue-grid-canvas/blob/master/WechatIMG132.jpeg?raw=true)
 
-### 目前测试阶段，暂不发布npm仓库，定制性较弱，需要日后完善，有需要的朋友，可参考example使用
 
-一个类似excel的表格组件，说明：
+## Install
+
+#### NPM / Yarn
+
+Install the package:
+
+```
+npm install vue-canvas-grid --save
+```
+
+Then import it in your project
+
+```js
+import Vue from 'vue'
+import Grid from 'vue-canvas-grid'
+
+Vue.component('grid', Grid)
+```
+
+## Usage
+
+Simply use it like so:
+
+```html
+        <grid :grid-data="data" :columns="columns" showCheckbox columnSet></grid>
+```
+
+一个类似excel的表格组件，已实现：
 * 1，通过canvas实现，能处理万级数据
 * 2，类似excel，选中单元格并实时编辑
 * 3，复制黏贴，支持批量，从excel复制，复制到excel都可以
@@ -19,24 +45,19 @@
 * 9，隐藏列功能，可开关
 
 
-以后计划：
+TODO：
 * 1，由于使用canvas不支持浏览器的检索功能，以后加上表格的搜索功能
 * 2，行列拖拽
+* 3，基本公式计算
 
 
 
-## 运行例子
+
+## 运行项目DEMO
 
 ``` bash
-# install dependencies
+
 npm install
 
-# serve with hot reload at localhost:8080
 npm run dev
 
-# build for production with minification
-npm run build
-
-# build for production and view the bundle analyzer report
-npm run build --report
-```

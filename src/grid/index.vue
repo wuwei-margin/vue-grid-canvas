@@ -39,7 +39,7 @@
                 <div class="column-set__title">请选择需要显示的列</div>
                 <div class="column-set__content" :style="'max-height:'+(height-105)+'px;'">
                     <ul>
-                        <li v-for="item of allColumns">
+                        <li v-for="item of allColumns" :key="item.id">
                             <checkbox v-model="item.checked">{{item.title}}</checkbox>
                         </li>
                     </ul>
