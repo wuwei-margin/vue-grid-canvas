@@ -253,7 +253,7 @@ export default {
             }
         },
         setBodyHeight(allRows, { y }) {
-            this.bodyHeight = y
+            this.bodyHeight = y + this.toolbarHeight
             for (const row of allRows) {
                 this.bodyHeight += row.height
             }
