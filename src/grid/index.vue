@@ -517,23 +517,25 @@ export default {
                     let index = 0
                     for (const word of this.words) {
                         if (value.indexOf(word) !== -1) {
-                            console.log(word, value)
                             value = value.replace(word, `this.allCells[$x$][${index}].content`)
                         }
                         index += 1
                     }
-                    console.log(value)
                     if (this.multiSelect) {
                         const modifyData = []
                         this.fxContent = eval(value.replace('$x$', 0)) //eslint-disable-line
                         for (let i = 0; i < this.allRows.length; i += 1) {
                             const key = this.focusCell.key
+                            let valueTemp = eval(value.replace('$x$', i)) //eslint-disable-line
+                            if (this.focusCell.type === 'number') {
+                                valueTemp = valueTemp.toFixed(2)
+                            }
                             const temp = {
                                 rowData: this.focusCell.rowData,
                                 index: i,
                                 items: [{
                                     key,
-                                    value: eval(value.replace('$x$', i)),//eslint-disable-line
+                                    value: valueTemp,
                                 }],
                             }
                             modifyData.push(temp)
