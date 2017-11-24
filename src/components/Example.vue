@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import Grid from '../../dist/vue-canvas-grid'
+import Grid from '../grid'
 
 export default {
     components: {

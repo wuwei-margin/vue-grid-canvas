@@ -119,6 +119,9 @@ export default {
             if (this.showCheckbox) {
                 this.paintCheckbox(ctx, displayRows)
             }
+            if (this.isMultiSelect) {
+                this.paintMultiSelect(ctx, this.multiSelect)
+            }
 
             this.paintSerial(ctx, displayRows)
 
@@ -274,6 +277,25 @@ export default {
                 ctx.fill()
                 ctx.stroke()
             }
+        },
+         /**
+        * 绘制批量操作选中区域
+        * @param {*} ctx
+        * @param {*} area
+        */
+        paintMultiSelect(ctx, area) {
+            const { p } = this
+            ctx.beginPath()
+            ctx.lineWidth = 2
+            ctx.setLineDash([10, 5])
+            ctx.strokeStyle = '#e33333'
+            ctx.moveTo(p(area.x), p(area.y))
+            ctx.lineTo(p(area.x + area.width), p(area.y))
+            ctx.lineTo(p(area.x + area.width), p(area.y + area.height))
+            ctx.moveTo(p(area.x), p(area.y))
+            ctx.lineTo(p(area.x), p(area.y + area.height))
+            ctx.stroke()
+            ctx.setLineDash([0])
         },
         /**
          * 绘制选中单元格边框
@@ -597,8 +619,7 @@ export default {
             if (this.showCheckbox) {
                 widthTemp += checkboxWidth
             }
-            ctx.moveTo(p(0), p(toolbarHeight - rowHeight - 1))
-            ctx.lineTo(p(widthTemp), p(toolbarHeight))
+
 
             ctx.moveTo(p(serialWidth + checkboxWidth), p(toolbarHeight - rowHeight - 1))
             ctx.lineTo(p(serialWidth + checkboxWidth), p(toolbarHeight))
@@ -609,8 +630,15 @@ export default {
             ctx.moveTo(p(0), p(toolbarHeight - rowHeight - 1))
             ctx.lineTo(p(maxPoint.x + fixedWidth), p(toolbarHeight - rowHeight - 1))
             ctx.stroke()
+            // 序号和固定列头部覆盖
             ctx.fillStyle = this.headFillColor
             ctx.fillRect(maxPoint.x + 1, toolbarHeight - rowHeight, fixedWidth, rowHeight - 1)
+            ctx.fillRect(0, p(toolbarHeight - rowHeight - 1), widthTemp, rowHeight - 1)
+
+            ctx.beginPath()
+            ctx.moveTo(p(0), p(toolbarHeight - rowHeight - 1))
+            ctx.lineTo(p(widthTemp), p(toolbarHeight))
+            ctx.stroke()
         },
         /**
        * 随机数取 小数 .5 (解决canvas绘制1px线出现模糊)

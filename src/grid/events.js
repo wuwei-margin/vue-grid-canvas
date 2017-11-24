@@ -57,6 +57,8 @@ export default {
                     this.hideInput()
                     this.selectArea = null
                     this.isSelect = false
+                    this.multiSelect = null
+                    this.isMultiSelect = false
                     const eX = evt.offsetX
                     const eY = evt.offsetY
                     if (eX > this.originPoint.x && eY > this.rowHeight && eX < this.maxPoint.x) {
@@ -93,16 +95,18 @@ export default {
                                 this.paintFocusCell(cell)
                                 this.$emit('focus', cell.rowData)
                             }
-                        } else {
-                            this.isFocus = false
-                            this.focusCell = null
-                            this.rePainted()
                         }
-                    } else {
-                        this.isFocus = false
-                        this.focusCell = null
-                        this.rePainted()
+                        //  else {
+                        //     this.isFocus = false
+                        //     this.focusCell = null
+                        //     this.rePainted()
+                        // }
                     }
+                    // else {
+                    //     this.isFocus = false
+                    //     this.focusCell = null
+                    //     this.rePainted()
+                    // }
                 }, 0)
             } else if (!evt.target.classList.contains('input-content')) {
                 if (evt.target.tagName !== 'CANVAS') {
@@ -111,11 +115,11 @@ export default {
                         this.hideInput()
                         needRepaint = true
                     }
-                    if (this.isFocus) {
-                        this.isFocus = false
-                        this.focusCell = null
-                        needRepaint = true
-                    }
+                    // if (this.isFocus) {
+                    //     this.isFocus = false
+                    //     this.focusCell = null
+                    //     needRepaint = true
+                    // }
                     if (this.isSelect) {
                         this.selectArea = null
                         this.isSelect = false
@@ -204,8 +208,8 @@ export default {
             this.verticalBar.move = false
         },
         handleResize() {
-            this.isFocus = false
-            this.focusCell = null
+            // this.isFocus = false
+            // this.focusCell = null
 
             this.selectArea = null
             this.isSelect = false
@@ -315,6 +319,22 @@ export default {
                     }
                 }
 
+                const headColumn = this.getHeadWord(x, y)
+                if (headColumn) {
+                    this.offset.y = 0
+                    this.multiSelect = { x: headColumn.x, y: this.toolbarHeight + this.rowHeight, width: headColumn.width, height: this.maxPoint.y - (this.toolbarHeight + this.rowHeight), cellIndex: headColumn.cellIndex, offset: { ...this.offset } }
+                    this.isMultiSelect = true
+                    this.focusCell = {
+                        ...this.allCells[0][headColumn.cellIndex],
+                        height: this.allRows[0].height,
+                        offset: { ...this.offset },
+                        x: headColumn.x,
+                        y: this.toolbarHeight + this.rowHeight + this.offset.y,
+                    }
+                    this.isFocus = true
+                    this.rePainted()
+                }
+
                 const button = this.getButtonAt(x, y)
                 if (button) {
                     this.rowFocus = button
@@ -323,12 +343,16 @@ export default {
                 }
             }
         },
-        handleDoubleClick() {
+        handleDoubleClick(e) {
+            const x = e.offsetX
+            const y = e.offsetY
             if (this.focusCell) {
-                const { x, y, width, height, content } = this.focusCell
-                this.$refs.input.innerHTML = content
-                this.keepLastIndex(this.$refs.input)
-                this.showInput(x, y, width, height)
+                if (x > this.focusCell.x && x < this.focusCell.x + this.focusCell.width && y > this.focusCell.y && y < this.focusCell.y + this.focusCell.height) {
+                    const { x, y, width, height, content } = this.focusCell
+                    this.$refs.input.innerHTML = content
+                    this.keepLastIndex(this.$refs.input)
+                    this.showInput(x, y, width, height)
+                }
             }
         },
         handleKeydown(e) {
@@ -374,7 +398,7 @@ export default {
                                 deleteData.push(temp)
                             }
                             this.$emit('update', deleteData)
-                        } else {
+                        } else if (!this.fxFocus) {
                             this.$emit('updateItem', {
                                 index: this.focusCell.rowIndex,
                                 key: this.focusCell.key,
@@ -410,8 +434,10 @@ export default {
                     }
                 }
                 if (e.keyCode === 13) {
-                    this.save()
-                    this.moveFocus('down')
+                    if (!this.fxFocus) {
+                        this.save()
+                        this.moveFocus('down')
+                    }
                 } else if (e.keyCode === 27) {
                     this.hideInput()
                     this.$refs.input.innerHTML = ''
@@ -433,6 +459,10 @@ export default {
             if (this.isSelect) {
                 this.selectArea = null
                 this.isSelect = false
+            }
+            if (this.isMultiSelect) {
+                this.multiSelect = null
+                this.isMultiSelect = false
             }
             const row = this.focusCell.rowIndex
             const cell = this.focusCell.cellIndex
@@ -557,6 +587,19 @@ export default {
                 window.getSelection().removeAllRanges()
                 window.getSelection().addRange(range)
             }
+        },
+        paintFocusCell(cell) {
+            if (cell) {
+                this.isFocus = true
+                this.rePainted()
+                this.$refs.input.innerHTML = ''
+                this.focusInput()
+            }
+        },
+        focusInput() {
+            setTimeout(() => {
+                this.$refs.input.focus()
+            }, 0)
         },
     },
 }

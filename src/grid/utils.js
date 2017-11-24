@@ -43,6 +43,16 @@ export default {
             }
             return null
         },
+        getHeadWord(x, y) {
+            if (y > this.toolbarHeight - this.rowHeight && y < this.toolbarHeight) {
+                for (const column of this.displayColumns) {
+                    if (x > column.x && x < column.x + column.width) {
+                        return Object.assign({}, column)
+                    }
+                }
+            }
+            return null
+        },
         getCellsBySelect(area) {
             const cells = []
             for (let i = area.rowIndex; i < area.rowIndex + area.rowCount; i += 1) {

@@ -384,6 +384,12 @@ export default {
                 }
                 cell.content = text
                 cell.paintText = textLine
+                if (this.focusCell) {
+                    if (this.focusCell.rowIndex === rowIndex && this.focusCell.cellIndex === cell.cellIndex) {
+                        this.focusCell.content = text
+                        this.focusCell.paintText = textLine
+                    }
+                }
             }
         },
         setCellItemAll(rowIndex, data) {
@@ -464,6 +470,10 @@ export default {
                     height += this.allRows[i].height
                 }
                 this.selectArea.height = height
+            }
+            if (this.multiSelect) {
+                this.multiSelect.x -= this.multiSelect.offset.x - this.offset.x
+                this.multiSelect.offset = { ...this.offset }
             }
             if (this.rowFocus) {
                 const lastOffset = this.rowFocus.offset

@@ -9,12 +9,13 @@
                     批量处理：
                 </label>
                 <div class="toobar__fx-content">
-                    <input type="text" v-model="fxContent">
+                    <input type="text" v-model="fxContent" @input="handleFxInput" @focus="fxFocus=true" @blur="handleFxBlur" :disabled="!focusCell||focusCell.readOnly" @keyup="handleFxKeyup">
+                    <div v-if="fxTip" class="toobar__fx-tip">{{fxTip}}</div>
                 </div>
             </div>
         </div>
 
-        <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent></div>
+        <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @blur="handleInputBlur" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent></div>
         <div class="input-content" ref="inputSelect" contenteditable="true" @keydown.prevent></div>
         <div class="horizontal-container" :style="{width:`${width-scrollerWidth+2}px`}" @click="scroll($event,0)">
             <div class="scroll-bar-horizontal" ref="horizontal" @mousedown="dragMove($event,0)" :style="{width:horizontalBar.size+'px',left:horizontalBar.x+'px'}">
@@ -109,9 +110,11 @@ export default {
             isEditing: false,
             isSelect: false,
             isFocus: false,
+            isMultiSelect: false,
 
             selectArea: null,
             focusCell: null,
+            multiSelect: null,
 
             currentText: '',
             inputStyles: {},
@@ -124,6 +127,9 @@ export default {
             isPaste: false,
             initRows: 300,
             fxContent: '',
+            fxFocus: false,
+            input: '',
+            fxTip: '',
         }
     },
     watch: {
@@ -133,8 +139,11 @@ export default {
             this.painted(this.initDisplayItems())
             this.initEvent()
         },
-        focusCell(value) {
-            this.fxContent = value.content
+        focusCell: {
+            handler(value) {
+                this.fxContent = value.content
+            },
+            deep: true,
         },
         selectArea(value) {
             if (value) {
@@ -184,6 +193,7 @@ export default {
         },
         setValueTemp(e) {
             this.valueTemp = e.target.innerText
+            this.fxContent = this.valueTemp
             const { width, height, serialWidth } = this.focusCell
             let { x, y } = this.focusCell
             if (x < serialWidth) {
@@ -195,6 +205,7 @@ export default {
                 y = this.rowHeight
             }
             if (!this.isPaste) {
+                // 正常键盘录入
                 this.selectArea = null
                 this.isSelect = false
                 this.rePainted()
@@ -289,6 +300,7 @@ export default {
                 }
                 this.$emit('update', modifyData)
             } else {
+                // 编辑状态下
                 this.isPaste = false
                 e.target.innerHTML = e.target.innerText
             }
@@ -333,19 +345,6 @@ export default {
             return {
                 type: 'string',
             }
-        },
-        paintFocusCell(cell) {
-            if (cell) {
-                this.isFocus = true
-                this.rePainted()
-                this.$refs.input.innerHTML = ''
-                this.focusInput()
-            }
-        },
-        focusInput() {
-            setTimeout(() => {
-                this.$refs.input.focus()
-            }, 100)
         },
         save() {
             if (this.focusCell && this.isEditing) {
@@ -462,7 +461,120 @@ export default {
             this.rePainted()
             return returnData
         },
-
+        handleFxInput() {
+            this.fxTip = ''
+            if (this.fxContent.indexOf('=') !== 0) {
+                if (!this.focusCell.readOnly) {
+                    if (this.multiSelect) {
+                        const modifyData = []
+                        for (let i = 0; i < this.allRows.length; i += 1) {
+                            const key = this.focusCell.key
+                            const temp = {
+                                rowData: this.focusCell.rowData,
+                                index: i,
+                                items: [{
+                                    key,
+                                    value: this.fxContent,
+                                }],
+                            }
+                            modifyData.push(temp)
+                        }
+                        this.$emit('update', modifyData)
+                    } else {
+                        this.$emit('updateItem', {
+                            index: this.focusCell.rowIndex,
+                            key: this.focusCell.key,
+                            value: this.fxContent,
+                        })
+                    }
+                }
+            }
+        },
+        handleFxBlur() {
+            this.fxFocus = false
+            this.paintFocusCell(this.focusCell)
+        },
+        handleInputBlur() {
+            if (this.fxContent && (`${this.fxContent}`).indexOf('=') === 0) {
+                this.doEquation()
+            }
+            setTimeout(() => {
+                if (!this.fxFocus) {
+                    this.paintFocusCell(this.focusCell)
+                }
+            }, 50)
+        },
+        handleFxKeyup(e) {
+            if (e.keyCode === 13 && this.fxContent.indexOf('=') === 0) {
+                this.doEquation()
+            }
+        },
+        doEquation() {
+            try {
+                let value = this.fxContent.split('=')[1].replace(/ /ig, '')
+                if (/[A-Z]/.test(value)) {
+                    // TODO
+                    let index = 0
+                    for (const word of this.words) {
+                        if (value.indexOf(word) !== -1) {
+                            console.log(word, value)
+                            value = value.replace(word, `this.allCells[$x$][${index}].content`)
+                        }
+                        index += 1
+                    }
+                    console.log(value)
+                    if (this.multiSelect) {
+                        const modifyData = []
+                        this.fxContent = eval(value.replace('$x$', 0)) //eslint-disable-line
+                        for (let i = 0; i < this.allRows.length; i += 1) {
+                            const key = this.focusCell.key
+                            const temp = {
+                                rowData: this.focusCell.rowData,
+                                index: i,
+                                items: [{
+                                    key,
+                                    value: eval(value.replace('$x$', i)),//eslint-disable-line
+                                }],
+                            }
+                            modifyData.push(temp)
+                        }
+                        this.$emit('update', modifyData)
+                    } else {
+                        this.fxContent = eval(value.replace('$x$', this.focusCell.rowIndex)) //eslint-disable-line
+                        this.$emit('updateItem', {
+                            index: this.focusCell.rowIndex,
+                            key: this.focusCell.key,
+                            value: this.fxContent,
+                        })
+                    }
+                } else if (this.multiSelect) {
+                    const modifyData = []
+                    this.fxContent = eval(value) //eslint-disable-line
+                    for (let i = 0; i < this.allRows.length; i += 1) {
+                        const key = this.focusCell.key
+                        const temp = {
+                            rowData: this.focusCell.rowData,
+                            index: i,
+                            items: [{
+                                key,
+                                value: this.fxContent,
+                            }],
+                        }
+                        modifyData.push(temp)
+                    }
+                    this.$emit('update', modifyData)
+                } else {
+                    this.fxContent = eval(value) //eslint-disable-line
+                    this.$emit('updateItem', {
+                        index: this.focusCell.rowIndex,
+                        key: this.focusCell.key,
+                        value: this.fxContent,
+                    })
+                }
+            } catch (error) {
+                this.fxTip = '非法表达式'
+            }
+        },
     },
 }
 </script>
@@ -492,7 +604,7 @@ export default {
     .toobar__fx {
       display: inline-block;
       vertical-align: top;
-      width: 600px;
+      width: 415px;
       label {
         width: 70px;
         display: inline-block;
@@ -501,11 +613,17 @@ export default {
         font-size: 12px;
         text-align: right;
       }
+      .toobar__fx-tip {
+        color: #e0000b;
+        font-size: 12px;
+        display: inline-block;
+        width: 60px;
+      }
       .toobar__fx-content {
         display: inline-block;
         vertical-align: top;
         input {
-          width: 520px;
+          width: 270px;
           outline: none;
           border-top: none;
           border-bottom: none;
@@ -653,6 +771,8 @@ export default {
     box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 5px;
     padding: 10px 10px 10px 50px;
     word-wrap: break-word;
+    font-size: 12px;
+    color: #666;
     .tip-icon {
       position: absolute;
       display: inline-block;
