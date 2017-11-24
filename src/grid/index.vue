@@ -1,7 +1,7 @@
 <template>
     <div ref="grid" class="excel-table" :style="`height:${height+2}px;`" @paste="doPaste">
         <div v-if="showToolbar" class="toolbar">
-            <div class="toolbar__focus" :style="'width:'+(serialWidth+checkboxWidth+1)+'px;'">
+            <div class="toolbar__focus" :style="'width:'+(serialWidth+(showCheckbox?checkboxWidth:0)+1)+'px;'">
                 {{focusCell?focusCell.cellPosition:''}}
             </div>
             <div class="toobar__fx">

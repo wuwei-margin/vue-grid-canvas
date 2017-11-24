@@ -621,8 +621,8 @@ export default {
             }
 
 
-            ctx.moveTo(p(serialWidth + checkboxWidth), p(toolbarHeight - rowHeight - 1))
-            ctx.lineTo(p(serialWidth + checkboxWidth), p(toolbarHeight))
+            ctx.moveTo(p(widthTemp), p(toolbarHeight - rowHeight - 1))
+            ctx.lineTo(p(widthTemp), p(toolbarHeight))
             ctx.moveTo(p(maxPoint.x), p(toolbarHeight - rowHeight - 1))
             ctx.lineTo(p(maxPoint.x), p(toolbarHeight))
             ctx.moveTo(p(0), p(toolbarHeight - 1))

@@ -14,7 +14,7 @@ export default {
     data() {
         return {
             columnSet: true,
-            showCheckbox: true,
+            showCheckbox: false,
             data: [],
             columns: [
                 { title: '品牌', key: 'brandName', width: 80 },
