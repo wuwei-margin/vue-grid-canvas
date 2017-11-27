@@ -274,6 +274,8 @@ export default {
         },
         handleColumnSet() {
             this.showColumnSet = false
+            this.focusCell = null
+            this.isFocus = false
             this.initSize()
         },
         handleClick(evt) {
@@ -532,6 +534,7 @@ export default {
                     }
                 }
             }
+            this.$emit('focus', this.focusCell.rowData)
             this.$emit('scroll')
         },
         getDisplayCellByRowIndex(displayCells, rowIndex, cellIndex) {

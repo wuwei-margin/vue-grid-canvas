@@ -141,7 +141,9 @@ export default {
         },
         focusCell: {
             handler(value) {
-                this.fxContent = value.content
+                if (value) {
+                    this.fxContent = value.content
+                }
             },
             deep: true,
         },
