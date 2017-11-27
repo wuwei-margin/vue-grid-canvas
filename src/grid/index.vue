@@ -511,7 +511,7 @@ export default {
         },
         doEquation() {
             try {
-                let value = this.fxContent.split('=')[1].replace(/ /ig, '')
+                let value = this.fxContent.split('=')[1].replace(/ /ig, '').toUpperCase()
                 if (/[A-Z]/.test(value)) {
                     // TODO
                     let index = 0
@@ -528,7 +528,7 @@ export default {
                             const key = this.focusCell.key
                             let valueTemp = eval(value.replace('$x$', i)) //eslint-disable-line
                             if (this.focusCell.type === 'number') {
-                                valueTemp = valueTemp.toFixed(2)
+                                valueTemp = parseFloat(valueTemp.toFixed(2))
                             }
                             const temp = {
                                 rowData: this.focusCell.rowData,
