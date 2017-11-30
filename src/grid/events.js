@@ -358,18 +358,20 @@ export default {
         handleKeydown(e) {
             if (this.isFocus) {
                 if (!this.isEditing) {
-                    if (e.keyCode === 38) {
-                        e.preventDefault()
-                        this.moveFocus('up')
-                    } else if (e.keyCode === 40) {
-                        e.preventDefault()
-                        this.moveFocus('down')
-                    } else if (e.keyCode === 37) {
-                        e.preventDefault()
-                        this.moveFocus('left')
-                    } else if (e.keyCode === 39) {
-                        e.preventDefault()
-                        this.moveFocus('right')
+                    if (!this.fxFocus) {
+                        if (e.keyCode === 38) {
+                            e.preventDefault()
+                            this.moveFocus('up')
+                        } else if (e.keyCode === 40) {
+                            e.preventDefault()
+                            this.moveFocus('down')
+                        } else if (e.keyCode === 37) {
+                            e.preventDefault()
+                            this.moveFocus('left')
+                        } else if (e.keyCode === 39) {
+                            e.preventDefault()
+                            this.moveFocus('right')
+                        }
                     } else if (e.keyCode === 16) {
                         this.shiftDown = true
                     } else if (e.keyCode === 8 || e.keyCode === 46) {
@@ -442,8 +444,10 @@ export default {
                     this.hideInput()
                     this.$refs.input.innerHTML = ''
                 } else if (e.keyCode === 9) {
-                    this.save()
-                    this.moveFocus('right')
+                    if (!this.fxFocus) {
+                        this.save()
+                        this.moveFocus('right')
+                    }
                 }
             }
         },

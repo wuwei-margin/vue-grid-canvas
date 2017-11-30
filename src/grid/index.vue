@@ -496,7 +496,7 @@ export default {
         },
         handleInputBlur() {
             if (this.fxContent && (`${this.fxContent}`).indexOf('=') === 0) {
-                this.doEquation()
+                this.evalExpression()
             }
             setTimeout(() => {
                 if (!this.fxFocus) {
@@ -506,12 +506,142 @@ export default {
         },
         handleFxKeyup(e) {
             if (e.keyCode === 13 && this.fxContent.indexOf('=') === 0) {
-                this.doEquation()
+                this.evalExpression()
             }
         },
-        doEquation() {
+        // =include(1-3,5)=>h*1.1 & include(4,6--)=>i*1.2
+        evalExpression() {
+            const value = this.fxContent.replace('=', '').replace(/ /ig, '').toUpperCase()// 取等号后表达式，去除空格
+            const expressions = value.split('&')
+            for (const expression of expressions) {
+                let regionType = ''
+                if (expression.indexOf('=>') !== -1) { // 指定了区域
+                    const region = expression.split('=>')[0]
+                    const equation = expression.split('=>')[1]
+                    const regionReg = /^(include)?\(.+\)|(exclude|!)\(.+\)$/i
+                    if (regionReg.test(region)) {
+                        const regionValue = region.match(/\(.+\)/)[0].replace('(', '').replace(')', '').split(',')
+                        const indexArray = []
+                        for (const item of regionValue) {
+                            if (item.indexOf('-') !== -1) {
+                                const temp = item.split('-')
+                                if (temp.length === 2) {
+                                    if (!isNaN(temp[0]) && !isNaN(temp[1]) && parseInt(temp[0], 10) > 0 && parseInt(temp[0], 10) < parseInt(temp[1], 10)) {
+                                        for (let i = temp[0] - 1; i < temp[1]; i += 1) {
+                                            indexArray.push(i)
+                                        }
+                                    }
+                                } else {
+                                    throw new Error('区域表达式非法')
+                                }
+                            } else if (!isNaN(item)) {
+                                indexArray.push(item)
+                            } else {
+                                throw new Error('区域表达式非法')
+                            }
+                        }
+                        if (/^(include)?\(.+\)$/i.test(region)) {
+                            regionType = 'include'
+                        } else {
+                            regionType = 'exclude'
+                        }
+                        this.doEquation(equation, indexArray, regionType)
+                    } else {
+                        throw new Error('区域表达式非法')
+                    }
+                } else {
+                    // 未指定区域
+                    this.doEquation(expression)
+                }
+            }
+        },
+        doEquation(equation, indexs, type = 'include') {
+            console.log(indexs, equation)
+            let index = 0
+            for (const word of this.words) {
+                if (equation.indexOf(word) !== -1) {
+                    equation = equation.replace(new RegExp(word, 'gi'), `this.allCells[$x$][${index}].content`)
+                }
+                index += 1
+            }
+            if (indexs && indexs.length > 0) {
+                const modifyData = []
+                if (type === 'include') {
+                    this.fxContent = eval(equation.replace('$x$', indexs[0])) //eslint-disable-line
+                    for (const i of indexs) {
+                        const key = this.focusCell.key
+                        let valueTemp = eval(equation.replace('$x$', i)) //eslint-disable-line
+                        if (this.focusCell.type === 'number') {
+                            valueTemp = parseFloat(valueTemp.toFixed(2))
+                        }
+                        const temp = {
+                            rowData: this.allCells[i][this.focusCell.cellIndex].rowData,
+                            index: i,
+                            items: [{
+                                key,
+                                value: valueTemp,
+                            }],
+                        }
+                        modifyData.push(temp)
+                    }
+                } else {
+                    let isFirstIndex = true
+                    for (let i = 0; i < this.allRows.length; i += 1) {
+                        if (indexs.indexOf(i) === -1) {
+                            if (isFirstIndex) {
+                                this.fxContent = eval(equation.replace('$x$', i)) //eslint-disable-line
+                            }
+                            isFirstIndex = false
+                            const key = this.focusCell.key
+                            let valueTemp = eval(equation.replace('$x$', i)) //eslint-disable-line
+                            if (this.focusCell.type === 'number') {
+                                valueTemp = parseFloat(valueTemp.toFixed(2))
+                            }
+                            const temp = {
+                                rowData: this.allCells[i][this.focusCell.cellIndex].rowData,
+                                index: i,
+                                items: [{
+                                    key,
+                                    value: valueTemp,
+                                }],
+                            }
+                            modifyData.push(temp)
+                        }
+                    }
+                }
+                this.$emit('update', modifyData)
+            } else if (this.multiSelect) {
+                const modifyData = []
+                this.fxContent = eval(equation.replace('$x$', 0)) //eslint-disable-line
+                for (let i = 0; i < this.allRows.length; i += 1) {
+                    const key = this.focusCell.key
+                    let valueTemp = eval(equation.replace('$x$', i)) //eslint-disable-line
+                    if (this.focusCell.type === 'number') {
+                        valueTemp = parseFloat(valueTemp.toFixed(2))
+                    }
+                    const temp = {
+                        rowData: this.focusCell.rowData,
+                        index: i,
+                        items: [{
+                            key,
+                            value: valueTemp,
+                        }],
+                    }
+                    modifyData.push(temp)
+                }
+                this.$emit('update', modifyData)
+            } else {
+                this.fxContent = eval(equation.replace('$x$', this.focusCell.rowIndex)) //eslint-disable-line
+                this.$emit('updateItem', {
+                    index: this.focusCell.rowIndex,
+                    key: this.focusCell.key,
+                    value: this.fxContent,
+                })
+            }
+        },
+        doEquation1() {
             try {
-                let value = this.fxContent.split('=')[1].replace(/ /ig, '')
+                let value = this.fxContent.split('=')[1].replace(/ /ig, '').toUpperCase()
                 if (/[A-Z]/.test(value)) {
                     // TODO
                     let index = 0
@@ -528,7 +658,7 @@ export default {
                             const key = this.focusCell.key
                             let valueTemp = eval(value.replace('$x$', i)) //eslint-disable-line
                             if (this.focusCell.type === 'number') {
-                                valueTemp = valueTemp.toFixed(2)
+                                valueTemp = parseFloat(valueTemp.toFixed(2))
                             }
                             const temp = {
                                 rowData: this.focusCell.rowData,
@@ -574,6 +704,7 @@ export default {
                     })
                 }
             } catch (error) {
+                console.log(error) //eslint-disable-line
                 this.fxTip = '非法表达式'
             }
         },
