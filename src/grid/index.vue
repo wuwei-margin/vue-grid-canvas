@@ -1,5 +1,6 @@
 <template>
     <div ref="grid" class="excel-table" :style="`height:${height+2}px;`" @paste="doPaste">
+        <button v-if="showBatchEditBtn" class="select-tip-btn" :style="batchEditStyle" @click="handleDoRegionExpress">批量编辑</button>
         <div v-if="showToolbar" class="toolbar">
             <div class="toolbar__focus" :style="'width:'+(serialWidth+(showCheckbox?checkboxWidth:0)+1)+'px;'">
                 {{focusCell?focusCell.cellPosition:''}}
@@ -9,12 +10,12 @@
                     批量处理：
                 </label>
                 <div class="toobar__fx-content">
-                    <input type="text" v-model="fxContent" @input="handleFxInput" @focus="fxFocus=true" @blur="handleFxBlur" :disabled="!focusCell||focusCell.readOnly" @keyup="handleFxKeyup">
+                    <input ref="fx-input" type="text" v-model="fxContent" @input="handleFxInput" @focus="fxFocus=true" @blur="handleFxBlur" :disabled="!focusCell||focusCell.readOnly" @keyup="handleFxKeyup">
                     <div v-if="fxTip" class="toobar__fx-tip">{{fxTip}}</div>
                 </div>
+
             </div>
         </div>
-
         <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @blur="handleInputBlur" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent></div>
         <div class="input-content" ref="inputSelect" contenteditable="true" @keydown.prevent></div>
         <div class="horizontal-container" :style="{width:`${width-scrollerWidth+2}px`}" @click="scroll($event,0)">
@@ -132,6 +133,31 @@ export default {
             fxTip: '',
         }
     },
+    computed: {
+        showBatchEditBtn() {
+            if (this.isSelect) {
+                if (this.selectArea.width > this.allColumns[this.selectArea.cellIndex].width) {
+                    return false
+                }
+                return true
+            }
+            return false
+        },
+        batchEditStyle() {
+            const { x, y, width, height } = this.selectArea
+            let _y = y
+            if (y < 90) {
+                _y = 90
+            }
+            if (y + height < 90) {
+                _y = -90
+            }
+            return {
+                left: `${x + width + 2}px`,
+                top: `${_y}px`,
+            }
+        },
+    },
     watch: {
         gridData(value) {
             this.data = [...value]
@@ -159,6 +185,12 @@ export default {
                 }
                 copyText += '</table>'
                 this.$refs.inputSelect.innerHTML = copyText
+            }
+        },
+        fxContent(value) {
+            if (`${value}` && (`${value}`).indexOf('=') === 0) {
+                // TODO 根据获取到的区域公式，显示虚线框
+                console.log(this.evalUtil(`${value}`)) //eslint-disable-line
             }
         },
     },
@@ -495,14 +527,14 @@ export default {
             this.paintFocusCell(this.focusCell)
         },
         handleInputBlur() {
-            if (this.fxContent && (`${this.fxContent}`).indexOf('=') === 0) {
-                this.evalExpression()
-            }
-            setTimeout(() => {
-                if (!this.fxFocus) {
-                    this.paintFocusCell(this.focusCell)
-                }
-            }, 50)
+            // if (this.fxContent && (`${this.fxContent}`).indexOf('=') === 0) {
+            //     this.evalExpression()
+            // }
+            // setTimeout(() => {
+            //     if (!this.fxFocus) {
+            //         this.paintFocusCell(this.focusCell)
+            //     }
+            // }, 50)
         },
         handleFxKeyup(e) {
             if (e.keyCode === 13 && this.fxContent.indexOf('=') === 0) {
@@ -511,60 +543,22 @@ export default {
         },
         // =include(1-3,5)=>h*1.1 & include(4,6--)=>i*1.2
         evalExpression() {
-            const value = this.fxContent.replace('=', '').replace(/ /ig, '').toUpperCase()// 取等号后表达式，去除空格
-            const expressions = value.split('&')
-            for (const expression of expressions) {
-                let regionType = ''
-                if (expression.indexOf('=>') !== -1) { // 指定了区域
-                    const region = expression.split('=>')[0]
-                    const equation = expression.split('=>')[1]
-                    const regionReg = /^(include)?\(.+\)|(exclude|!)\(.+\)$/i
-                    if (regionReg.test(region)) {
-                        const regionValue = region.match(/\(.+\)/)[0].replace('(', '').replace(')', '').split(',')
-                        const indexArray = []
-                        for (const item of regionValue) {
-                            if (item.indexOf('-') !== -1) {
-                                const temp = item.split('-')
-                                if (temp.length === 2) {
-                                    if (!isNaN(temp[0]) && !isNaN(temp[1]) && parseInt(temp[0], 10) > 0 && parseInt(temp[0], 10) < parseInt(temp[1], 10)) {
-                                        for (let i = temp[0] - 1; i < temp[1]; i += 1) {
-                                            indexArray.push(i)
-                                        }
-                                    }
-                                } else {
-                                    throw new Error('区域表达式非法')
-                                }
-                            } else if (!isNaN(item)) {
-                                indexArray.push(item)
-                            } else {
-                                throw new Error('区域表达式非法')
-                            }
-                        }
-                        if (/^(include)?\(.+\)$/i.test(region)) {
-                            regionType = 'include'
-                        } else {
-                            regionType = 'exclude'
-                        }
-                        this.doEquation(equation, indexArray, regionType)
+            try {
+                const result = this.evalUtil(this.fxContent)
+                for (const item of result) {
+                    if (item.indexArray && item.indexArray.length > 0 && item.regionType) {
+                        this.doEquation(...item)
                     } else {
-                        throw new Error('区域表达式非法')
+                        this.doEquation(item.equation)
                     }
-                } else {
-                    // 未指定区域
-                    this.doEquation(expression)
                 }
+            } catch (error) {
+                console.log(error) //eslint-disable-line
+                this.fxTip = '非法表达式'
             }
         },
-        doEquation(equation, indexs, type = 'include') {
-            console.log(indexs, equation)
-            let index = 0
-            for (const word of this.words) {
-                if (equation.indexOf(word) !== -1) {
-                    equation = equation.replace(new RegExp(word, 'gi'), `this.allCells[$x$][${index}].content`)
-                }
-                index += 1
-            }
-            if (indexs && indexs.length > 0) {
+        doEquation(equation, indexs, type) {
+            if (indexs && type) {
                 const modifyData = []
                 if (type === 'include') {
                     this.fxContent = eval(equation.replace('$x$', indexs[0])) //eslint-disable-line
@@ -639,74 +633,20 @@ export default {
                 })
             }
         },
-        doEquation1() {
-            try {
-                let value = this.fxContent.split('=')[1].replace(/ /ig, '').toUpperCase()
-                if (/[A-Z]/.test(value)) {
-                    // TODO
-                    let index = 0
-                    for (const word of this.words) {
-                        if (value.indexOf(word) !== -1) {
-                            value = value.replace(word, `this.allCells[$x$][${index}].content`)
-                        }
-                        index += 1
-                    }
-                    if (this.multiSelect) {
-                        const modifyData = []
-                        this.fxContent = eval(value.replace('$x$', 0)) //eslint-disable-line
-                        for (let i = 0; i < this.allRows.length; i += 1) {
-                            const key = this.focusCell.key
-                            let valueTemp = eval(value.replace('$x$', i)) //eslint-disable-line
-                            if (this.focusCell.type === 'number') {
-                                valueTemp = parseFloat(valueTemp.toFixed(2))
-                            }
-                            const temp = {
-                                rowData: this.focusCell.rowData,
-                                index: i,
-                                items: [{
-                                    key,
-                                    value: valueTemp,
-                                }],
-                            }
-                            modifyData.push(temp)
-                        }
-                        this.$emit('update', modifyData)
-                    } else {
-                        this.fxContent = eval(value.replace('$x$', this.focusCell.rowIndex)) //eslint-disable-line
-                        this.$emit('updateItem', {
-                            index: this.focusCell.rowIndex,
-                            key: this.focusCell.key,
-                            value: this.fxContent,
-                        })
-                    }
-                } else if (this.multiSelect) {
-                    const modifyData = []
-                    this.fxContent = eval(value) //eslint-disable-line
-                    for (let i = 0; i < this.allRows.length; i += 1) {
-                        const key = this.focusCell.key
-                        const temp = {
-                            rowData: this.focusCell.rowData,
-                            index: i,
-                            items: [{
-                                key,
-                                value: this.fxContent,
-                            }],
-                        }
-                        modifyData.push(temp)
-                    }
-                    this.$emit('update', modifyData)
-                } else {
-                    this.fxContent = eval(value) //eslint-disable-line
-                    this.$emit('updateItem', {
-                        index: this.focusCell.rowIndex,
-                        key: this.focusCell.key,
-                        value: this.fxContent,
-                    })
-                }
-            } catch (error) {
-                console.log(error) //eslint-disable-line
-                this.fxTip = '非法表达式'
+        handleDoRegionExpress() {
+            if (this.selectArea) {
+                const { rowIndex, rowCount } = this.selectArea
+                this.fxContent = `=include(${rowIndex + 1}-${rowIndex + rowCount})=>`
+                this.focusFxInput()
+                this.selectArea = null
+                this.isSelect = false
+                this.rePainted()
             }
+        },
+        focusFxInput() {
+            setTimeout(() => {
+                this.$refs['fx-input'].focus()
+            }, 0)
         },
     },
 }
@@ -877,22 +817,22 @@ export default {
       line-height: 40px;
       border-top: 1px solid #ddd;
       text-align: right;
-      button {
-        height: 25px;
-        width: 56px;
-        line-height: 24px;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        outline: none;
-        cursor: pointer;
-        color: #333;
-        &:hover {
-          background-color: #f9f9f9;
-        }
-        &:active {
-          background-color: #f5f5f5;
-        }
-      }
+    }
+  }
+  button {
+    height: 25px;
+    width: 56px;
+    line-height: 24px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    outline: none;
+    cursor: pointer;
+    color: #333;
+    &:hover {
+      background-color: #f9f9f9;
+    }
+    &:active {
+      background-color: #f5f5f5;
     }
   }
   .tip {
@@ -925,6 +865,13 @@ export default {
   .slide-fade-leave-to {
     transform: translateX(10px);
     opacity: 0;
+  }
+  .select-tip-btn {
+    z-index: 10;
+    position: absolute;
+    width: 70px;
+    border: 1px solid #bbb;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
   }
 }
 </style>

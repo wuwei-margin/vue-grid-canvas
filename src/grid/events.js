@@ -108,7 +108,7 @@ export default {
                     //     this.rePainted()
                     // }
                 }, 0)
-            } else if (!evt.target.classList.contains('input-content')) {
+            } else if (evt.target.tagName !== 'BUTTON' && !evt.target.classList.contains('input-content')) {
                 if (evt.target.tagName !== 'CANVAS') {
                     if (this.isEditing) {
                         this.save()
@@ -372,7 +372,8 @@ export default {
                             e.preventDefault()
                             this.moveFocus('right')
                         }
-                    } else if (e.keyCode === 16) {
+                    }
+                    if (e.keyCode === 16) {
                         this.shiftDown = true
                     } else if (e.keyCode === 8 || e.keyCode === 46) {
                         if (this.isSelect) {

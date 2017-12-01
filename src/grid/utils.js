@@ -109,5 +109,59 @@ export default {
                 this.showTip = false
             }, 2000)
         },
+        evalUtil(expression) {
+            const value = expression.replace('=', '').replace(/ /ig, '').toUpperCase()// 取等号后表达式，去除空格
+            const expressions = value.split('&')
+            const result = []
+            for (const expression of expressions) {
+                let regionType = ''
+                let equation = expression
+                const indexArray = []
+                if (expression.indexOf('=>') !== -1) { // 指定了区域
+                    const region = expression.split('=>')[0]
+                    equation = expression.split('=>')[1]
+                    const regionReg = /^(include)?\(.+\)|(exclude|!)\(.+\)$/i
+                    if (regionReg.test(region)) {
+                        const regionValue = region.match(/\(.+\)/)[0].replace('(', '').replace(')', '').split(',')
+                        for (const item of regionValue) {
+                            if (item.indexOf('-') !== -1) {
+                                const temp = item.split('-')
+                                if (temp.length === 2) {
+                                    if (!isNaN(temp[0]) && !isNaN(temp[1]) && parseInt(temp[0], 10) > 0 && parseInt(temp[0], 10) < parseInt(temp[1], 10)) {
+                                        for (let i = temp[0] - 1; i < temp[1]; i += 1) {
+                                            indexArray.push(i)
+                                        }
+                                    }
+                                } else {
+                                    throw new Error('区域表达式非法')
+                                }
+                            } else if (!isNaN(item)) {
+                                indexArray.push(parseInt(item, 10) - 1)
+                            } else {
+                                throw new Error('区域表达式非法')
+                            }
+                        }
+                        if (/^(include)?\(.+\)$/i.test(region)) {
+                            regionType = 'include'
+                        } else if (/^(exclude|!)\(.+\)$/i.test(region)) {
+                            regionType = 'exclude'
+                        }
+                    } else {
+                        throw new Error('区域表达式非法')
+                    }
+                }
+                if (equation) {
+                    let index = 0
+                    for (const word of this.words) {
+                        if (equation.indexOf(word) !== -1) {
+                            equation = equation.replace(new RegExp(word, 'gi'), `this.allCells[$x$][${index}].content`)
+                        }
+                        index += 1
+                    }
+                }
+                result.push({ equation, indexArray, regionType })
+            }
+            return result
+        },
     },
 }
