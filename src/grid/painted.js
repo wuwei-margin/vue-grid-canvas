@@ -599,7 +599,7 @@ export default {
             ctx.strokeStyle = this.borderColor
             ctx.font = 'bold 12px PingFang SC'
             ctx.lineWidth = 1
-            let index = 0
+            let index = displayColumns[0].cellIndex
             for (const column of displayColumns) {
                 if (!column.fixed || this.fillWidth > 0) {
                     let textColor = this.headerColor

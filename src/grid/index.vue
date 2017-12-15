@@ -616,7 +616,7 @@ export default {
                         valueTemp = parseFloat(valueTemp.toFixed(2))
                     }
                     const temp = {
-                        rowData: this.focusCell.rowData,
+                        rowData: this.allCells[i][0].rowData,
                         index: i,
                         items: [{
                             key,
