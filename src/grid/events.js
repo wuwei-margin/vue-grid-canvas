@@ -86,12 +86,6 @@ export default {
                                 }
                             } else {
                                 this.focusCell = cell
-                                this.rowFocus = {
-                                    cellX: cell.x,
-                                    cellY: cell.y,
-                                    rowIndex: this.focusCell.rowIndex,
-                                    offset: { ...this.offset },
-                                }
                                 this.paintFocusCell(cell)
                                 this.$emit('focus', cell.rowData)
                             }
@@ -598,6 +592,12 @@ export default {
         },
         paintFocusCell(cell) {
             if (cell) {
+                this.rowFocus = {
+                    cellX: cell.x,
+                    cellY: cell.y,
+                    rowIndex: cell.rowIndex,
+                    offset: { ...this.offset },
+                }
                 this.isFocus = true
                 this.rePainted()
                 this.$refs.input.innerHTML = ''
