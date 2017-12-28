@@ -383,6 +383,11 @@ export default {
             let cell = null
             if (key === 'salePrice' || key === 'purchasePrice') {
                 this.calculateSumRate()
+                if (this.focusCell) {
+                    if (rowIndex === this.focusCell.rowIndex) {
+                        this.calculateRate([this.focusCell.rowData])
+                    }
+                }
             }
             for (const item of cells) {
                 if (item.key === key) {
