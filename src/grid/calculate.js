@@ -418,7 +418,11 @@ export default {
                     sumPurchasePrice += parseFloat(item.purchasePrice)
                 }
             }
-            this.rate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            if (sumSaleprice > 0 && sumPurchasePrice > 0) {
+                this.rate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            } else {
+                this.rate = 0
+            }
         },
         calculateSumRate() {
             let sumSaleprice = 0
@@ -429,7 +433,11 @@ export default {
                     sumPurchasePrice += parseFloat(item.purchasePrice)
                 }
             }
-            this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            if (sumSaleprice > 0 && sumPurchasePrice > 0) {
+                this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            } else {
+                this.sumRate = 0
+            }
         },
         setCellItemAll(rowIndex, data) {
             let index = 0

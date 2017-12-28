@@ -16,11 +16,11 @@
             </div>
             <div v-if="showRate" class="toobar__rate">
                 <label>
-                    总毛利率：
+                    整单利率：
                     <span> {{sumRate}}%</span>
                 </label>
                 <label>
-                    选中区域毛利率：
+                    选中商品毛利率：
                     <span> {{rate}}%</span>
                 </label>
             </div>
