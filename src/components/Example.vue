@@ -1,6 +1,6 @@
 <template>
     <div>
-        <grid :grid-data="data" :columns="columns" :showCheckbox="showCheckbox" :columnSet="columnSet" :left-height="20" @focus="focus" @updateValue="update"></grid>
+        <grid :grid-data="data" :columns="columns" :showCheckbox="showCheckbox" :columnSet="columnSet" :left-height="20" @focus="focus" @updateValue="update" :showRate="true"></grid>
     </div>
 </template>
 

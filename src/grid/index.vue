@@ -13,7 +13,16 @@
                     <input ref="fx-input" type="text" v-model="fxContent" @input="handleFxInput" @focus="fxFocus=true" @blur="handleFxBlur" :disabled="!focusCell||focusCell.readOnly" @keyup="handleFxKeyup">
                     <div v-if="fxTip" class="toobar__fx-tip">{{fxTip}}</div>
                 </div>
-
+            </div>
+            <div v-if="showRate" class="toobar__rate">
+                <label>
+                    总毛利率：
+                    <span> {{sumRate}}%</span>
+                </label>
+                <label>
+                    选中区域毛利率：
+                    <span> {{rate}}%</span>
+                </label>
             </div>
         </div>
         <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @blur="handleInputBlur" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent></div>
@@ -100,6 +109,10 @@ export default {
             type: Boolean,
             default: true,
         },
+        showRate: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         return {
@@ -131,6 +144,8 @@ export default {
             fxFocus: false,
             input: '',
             fxTip: '',
+            sumRate: 0,
+            rate: 0,
         }
     },
     computed: {
@@ -709,6 +724,18 @@ export default {
           padding: 5px 15px;
           font-size: 12px;
         }
+      }
+    }
+  }
+  .toobar__rate {
+    display: inline-block;
+    vertical-align: top;
+    label {
+      font-size: 12px;
+      line-height: 30px;
+      margin-right: 15px;
+      span {
+          color:#03a2fe;
       }
     }
   }

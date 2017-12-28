@@ -88,6 +88,7 @@ export default {
                                 this.focusCell = cell
                                 this.paintFocusCell(cell)
                                 this.$emit('focus', cell.rowData)
+                                this.calculateRate([cell.rowData])
                             }
                         }
                         //  else {
@@ -534,6 +535,7 @@ export default {
                 }
             }
             this.$emit('focus', this.focusCell.rowData)
+            this.calculateRate([this.focusCell.rowData])
             this.$emit('scroll')
         },
         getDisplayCellByRowIndex(displayCells, rowIndex, cellIndex) {

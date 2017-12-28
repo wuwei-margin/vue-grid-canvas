@@ -91,10 +91,16 @@ export default {
             this.fixedWidth = 0
             const { rowHeight, ctx, getTextLine, allRows, allCells, allColumns, fixedColumns, allFixedCells } = this
             let rowIndex = 0
+            let sumSaleprice = 0
+            let sumPurchasePrice = 0
             for (const item of value) {
                 let maxHeight = rowHeight
                 let cellIndex = 0
                 const cellTemp = []
+                if (item.salePrice > 0 && item.purchasePrice > 0) {
+                    sumSaleprice += parseFloat(item.salePrice)
+                    sumPurchasePrice += parseFloat(item.purchasePrice)
+                }
                 for (const column of columns) {
                     if (rowIndex === 0) {
                         if (column.fixed) {
@@ -193,6 +199,7 @@ export default {
                 })
                 rowIndex += 1
             }
+            this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
             for (const item of fixedColumns) {
                 const temp = []
                 let index = 0
@@ -269,11 +276,17 @@ export default {
         setAllCells(startIndex) {
             const { rowHeight, ctx, getTextLine, allRows, allCells, columns } = this
             let rowIndex = startIndex
+            let sumSaleprice = 0
+            let sumPurchasePrice = 0
             for (let i = startIndex; i < this.data.length; i += 1) {
                 const item = this.data[i]
                 let maxHeight = rowHeight
                 let cellIndex = 0
                 const cellTemp = []
+                if (item.salePrice > 0 && item.purchasePrice > 0) {
+                    sumSaleprice += parseFloat(item.salePrice)
+                    sumPurchasePrice += parseFloat(item.purchasePrice)
+                }
                 for (const column of columns) {
                     let text = ''
                     let buttons
@@ -329,6 +342,7 @@ export default {
                 })
                 rowIndex += 1
             }
+            this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
             this.setBodyHeight(this.allRows, this.originPoint)
             this.resetScrollBar(this.maxPoint, this.bodyWidth, this.bodyHeight, this.fixedWidth)
         },
@@ -359,6 +373,9 @@ export default {
             const cells = allCells[rowIndex]
             let index = 0
             let cell = null
+            if (key === 'salePrice' || key === 'purchasePrice') {
+                this.calculateSumRate()
+            }
             for (const item of cells) {
                 if (item.key === key) {
                     cell = allCells[rowIndex][index]
@@ -391,6 +408,28 @@ export default {
                     }
                 }
             }
+        },
+        calculateRate(data) {
+            let sumSaleprice = 0
+            let sumPurchasePrice = 0
+            for (const item of data) {
+                if (item.salePrice > 0 && item.purchasePrice > 0) {
+                    sumSaleprice += parseFloat(item.salePrice)
+                    sumPurchasePrice += parseFloat(item.purchasePrice)
+                }
+            }
+            this.rate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+        },
+        calculateSumRate() {
+            let sumSaleprice = 0
+            let sumPurchasePrice = 0
+            for (const item of this.data) {
+                if (item.salePrice > 0 && item.purchasePrice > 0) {
+                    sumSaleprice += parseFloat(item.salePrice)
+                    sumPurchasePrice += parseFloat(item.purchasePrice)
+                }
+            }
+            this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
         },
         setCellItemAll(rowIndex, data) {
             let index = 0
@@ -466,10 +505,13 @@ export default {
                 this.selectArea.y -= lastOffset.y - this.offset.y
                 this.selectArea.offset = { ...this.offset }
                 let height = 0
+                const rowDatas = []
                 for (let i = this.selectArea.rowIndex; i < (this.selectArea.rowIndex + this.selectArea.rowCount); i += 1) {
                     height += this.allRows[i].height
+                    rowDatas.push(this.allCells[i][0].rowData)
                 }
                 this.selectArea.height = height
+                this.calculateRate(rowDatas)
             }
             if (this.multiSelect) {
                 this.multiSelect.x -= this.multiSelect.offset.x - this.offset.x
