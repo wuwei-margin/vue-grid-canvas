@@ -199,7 +199,11 @@ export default {
                 })
                 rowIndex += 1
             }
-            this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            if (sumSaleprice > 0 && sumPurchasePrice > 0) {
+                this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            } else {
+                this.sumRate = 0
+            }
             for (const item of fixedColumns) {
                 const temp = []
                 let index = 0
@@ -342,7 +346,11 @@ export default {
                 })
                 rowIndex += 1
             }
-            this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            if (sumSaleprice > 0 && sumPurchasePrice > 0) {
+                this.sumRate = parseFloat((((sumSaleprice - sumPurchasePrice) / sumSaleprice) * 100).toFixed(2))
+            } else {
+                this.sumRate = 0
+            }
             this.setBodyHeight(this.allRows, this.originPoint)
             this.resetScrollBar(this.maxPoint, this.bodyWidth, this.bodyHeight, this.fixedWidth)
         },

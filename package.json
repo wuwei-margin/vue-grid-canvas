@@ -1,6 +1,6 @@
 {
   "name": "vue-grid-canvas",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A vue component, it can generate a similar excel form for you",
   "main": "dist/vue-canvas-grid.js",
   "files": [
