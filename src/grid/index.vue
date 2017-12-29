@@ -23,6 +23,12 @@
                     选中商品毛利率：
                     <span> {{rate}}%</span>
                 </label>
+                <label class="help">?
+                    <div class="help-content">
+                        <p>毛利率计算公式：（销售价-采购价）/销售价</p>
+                        <p>整单毛利计算规则：销售价和采购价都不为空的商品计入整单毛利</p>
+                    </div>
+                </label>
             </div>
         </div>
         <div class="input-content" :style="inputStyles" ref="input" contenteditable="true" @input="setValueTemp" @blur="handleInputBlur" @keydown.tab.prevent @keydown.enter.prevent @keydown.esc.prevent></div>
@@ -735,7 +741,70 @@ export default {
       line-height: 30px;
       margin-right: 15px;
       span {
-          color:#03a2fe;
+        color: #03a2fe;
+      }
+    }
+    label.help {
+      background-color: #999;
+      color: #fff;
+      font-weight: 900;
+      width: 20px;
+      display: inline-block;
+      text-align: center;
+      line-height: 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      .help-content {
+        display: none;
+        position: absolute;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+        color: #666;
+        width: 275px;
+        text-align: left;
+        padding-left: 10px;
+        left: -240px;
+        top: 24px;
+        z-index: 11;
+      }
+      &:before {
+        content: " ";
+        display: none;
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #fff;
+        transform: rotate(45deg);
+        top: 22px;
+        right: 6px;
+        z-index: 10;
+        border: 1px solid #ddd;
+        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+      }
+      &:after {
+        content: " ";
+        display: none;
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: #fff;
+        transform: rotate(45deg);
+        top: 22px;
+        right: 6px;
+        z-index: 12;
+      }
+      &:hover {
+        .help-content {
+          display: block;
+        }
+        &:after {
+          display: inline-block;
+        }
+        &:before {
+          display: inline-block;
+        }
       }
     }
   }
