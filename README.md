@@ -12,7 +12,7 @@
 Install the package:
 
 ```
-npm install vue-canvas-grid --save
+npm install vue-grid-canvas --save
 ```
 
 Then import it in your project
