@@ -147,6 +147,7 @@ export default {
             isPaste: false,
             initRows: 300,
             fxContent: '',
+            recordContent: '',
             fxFocus: false,
             input: '',
             fxTip: '',
@@ -190,6 +191,7 @@ export default {
             handler(value) {
                 if (value) {
                     this.fxContent = value.content
+                    this.recordContent = value.content
                 }
             },
             deep: true,
@@ -213,7 +215,7 @@ export default {
         fxContent(value) {
             if (`${value}` && (`${value}`).indexOf('=') === 0) {
                 // TODO 根据获取到的区域公式，显示虚线框
-                console.log(this.evalUtil(`${value}`)) //eslint-disable-line
+                console.log(this.evalUtil(`${value}`), 1) //eslint-disable-line
             }
         },
     },
@@ -415,14 +417,16 @@ export default {
         saveItem(data, history) {
             const { index, key } = data
             let value = data.value
+            if (value === String(this.recordContent)) {
+                return false
+            }
             const curColumn = this.validateKeyType(key)
-
             if (curColumn) {
                 if (curColumn.type === 'number') {
                     const re = /^(([1-9][0-9]*\.[0-9][0-9]*)|([0]\.[0-9][0-9]*)|([1-9][0-9]*)|([0]{1}))$/
                     if (value && !re.test(value)) {
                         this.showTipMessage(`【 ${curColumn.title} 】单元格只支持数字。`)
-                        return
+                        return false
                     }
                     if (!value) {
                         value = null
@@ -440,6 +444,7 @@ export default {
                 this.rePainted()
                 this.$emit('updateValue', [{ rowData: this.data[index], items: [{ key, value }] }])
             }
+            return false
         },
         saveItems(data, history) {
             const returnData = []
